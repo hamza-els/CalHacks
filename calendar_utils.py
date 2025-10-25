@@ -63,35 +63,61 @@ def create_google_service(credentials_path: str = "credentials.json", token_path
 def create_google_event(service, event: Dict, calendar_id: str = "primary", timezone: str = "America/Los_Angeles") -> Dict:
     """Create an event in Google Calendar.
 
-    event: dict with keys title, start (datetime), end (datetime), description, location
+    event: dict with keys title, start (datetime), end (datetime), description, location, all_day (bool)
     timezone: IANA timezone string (default: America/Los_Angeles)
     Returns the created event resource.
     """
+    # Check if this is an all-day event
+    is_all_day = event.get("all_day", False)
+    
     # Ensure timezone is included in the datetime ISO string
     start_dt = event["start"]
     end_dt = event["end"]
     
-    # If datetime is naive, assume local timezone
-    if start_dt.tzinfo is None:
-        from datetime import timezone as tz
-        start_dt = start_dt.replace(tzinfo=tz.utc)
-    if end_dt.tzinfo is None:
-        from datetime import timezone as tz
-        end_dt = end_dt.replace(tzinfo=tz.utc)
+    # Handle all-day events vs timed events
+    if is_all_day:
+        # For all-day events, use date field (no time component)
+        body = {
+            "summary": event.get("title"),
+            "description": event.get("description"),
+            "location": event.get("location"),
+            "start": {
+                "date": start_dt.strftime("%Y-%m-%d")
+            },
+            "end": {
+                "date": end_dt.strftime("%Y-%m-%d")
+            },
+        }
+    else:
+        # For timed events, use dateTime with timezone
+        # If datetime is naive, format it as if it's already in the specified timezone
+        # Don't convert to UTC - Google Calendar will interpret naive times in the specified timezone
+        
+        # Format datetime without timezone if naive
+        if start_dt.tzinfo is None:
+            start_str = start_dt.strftime("%Y-%m-%dT%H:%M:%S")
+        else:
+            start_str = start_dt.isoformat()
+            
+        if end_dt.tzinfo is None:
+            end_str = end_dt.strftime("%Y-%m-%dT%H:%M:%S")
+        else:
+            end_str = end_dt.isoformat()
+        
+        body = {
+            "summary": event.get("title"),
+            "description": event.get("description"),
+            "location": event.get("location"),
+            "start": {
+                "dateTime": start_str,
+                "timeZone": timezone
+            },
+            "end": {
+                "dateTime": end_str,
+                "timeZone": timezone
+            },
+        }
     
-    body = {
-        "summary": event.get("title"),
-        "description": event.get("description"),
-        "location": event.get("location"),
-        "start": {
-            "dateTime": start_dt.isoformat(),
-            "timeZone": timezone
-        },
-        "end": {
-            "dateTime": end_dt.isoformat(),
-            "timeZone": timezone
-        },
-    }
     created = service.events().insert(calendarId=calendar_id, body=body).execute()
     return created
 

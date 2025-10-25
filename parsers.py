@@ -9,7 +9,9 @@ Improve by using an NLP model or rule engine for production.
 from typing import List, Dict, Optional
 import dateparser.search
 from dateparser import parse as parse_date
-from datetime import timedelta
+from datetime import timedelta, datetime
+import os
+import json
 
 
 def _extract_sentence(text: str, start_idx: int, end_idx: int) -> str:
@@ -70,6 +72,157 @@ def extract_events_from_text(text: str, base_date: Optional[str] = None) -> List
         events.append(event)
 
     return events
+
+
+def extract_events_with_gemini(text: str, base_date: Optional[str] = None) -> List[Dict]:
+    """Extract events using Google Gemini API for better semantic understanding.
+    
+    Requires GEMINI_API_KEY environment variable to be set.
+    Falls back to dateparser if Gemini API is not available.
+    
+    Returns events with keys: title, start (datetime), end (datetime), description, location
+    """
+    api_key = os.environ.get('GEMINI_API_KEY')
+    
+    if not api_key:
+        print("GEMINI_API_KEY not set, falling back to dateparser")
+        return extract_events_from_text(text, base_date)
+    
+    try:
+        import google.generativeai as genai
+        
+        # Configure API - use stable v1 API instead of v1beta
+        genai.configure(api_key=api_key)
+        
+        # List available models to debug
+        try:
+            available_models = [m.name for m in genai.list_models()]
+            print(f"Available models: {available_models}")
+        except Exception as e:
+            print(f"Could not list models: {e}")
+        
+        # Build the prompt
+        current_date = datetime.now().isoformat() if not base_date else base_date
+        prompt = f"""You are an expert at extracting calendar events from academic syllabi and course schedules.
+
+Extract all events, deadlines, exams, lectures, and important dates from the following text.
+
+CLASSIFY each item as either an "event" or "task":
+- EVENTS: Have specific start and end times (lectures, labs, discussions, exams, meetings, office hours)
+- TASKS: Only have due dates, no specific time needed (assignments, projects, homework, papers)
+
+Return a JSON array. Each item should have:
+- type: Either "event" or "task"
+- title: A short, descriptive title, do not include the date or time
+- start_text: The exact start date/time mentioned (keep original format) OR due date for tasks
+- end_text: The exact end date/time mentioned, or "1 hour" for events, "0" for tasks
+- location: Building name, room number, or "Online" if mentioned (usually empty for tasks)
+- description: Category (e.g., "Lecture", "Lab", "Exam", "Discussion", "Assignment", "Project") - be concise
+
+Important rules:
+1. Use the text's actual date formats (don't convert to ISO unless necessary)
+2. For events without time, assume reasonable defaults (10am for classes, 3pm for exams)
+3. For tasks, use the due date as start_text and set end_text to "0"
+4. For recurring events like "Every Monday", create a single entry with pattern in description
+5. Return ONLY valid JSON, no markdown formatting
+
+Current date context: {current_date}
+
+Text to analyze:
+{text}
+
+Return JSON array:"""
+
+        # Call Gemini API (using available models - free tier)
+        # Using models from the available list
+        model_names = [
+            'models/gemini-2.5-flash',  # Latest flash model
+            'models/gemini-2.0-flash',   # Stable flash model
+            'models/gemini-flash-latest', # Compatible version
+            'models/gemini-pro-latest',   # Pro version
+            'models/gemini-2.5-pro'       # Latest pro model
+        ]
+        
+        response = None
+        for model_name in model_names:
+            try:
+                print(f"Trying model: {model_name}")
+                model = genai.GenerativeModel(model_name)
+                response = model.generate_content(prompt)
+                print(f"Successfully used {model_name}")
+                break
+            except Exception as model_error:
+                print(f"Model {model_name} failed: {model_error}")
+                continue
+        
+        if response is None:
+            raise Exception("All Gemini models failed")
+        
+        # Extract JSON from response
+        response_text = response.text
+        
+        # Clean up the response (remove markdown code blocks if present)
+        if "```json" in response_text:
+            response_text = response_text.split("```json")[1].split("```")[0]
+        elif "```" in response_text:
+            response_text = response_text.split("```")[1].split("```")[0]
+        
+        # Parse JSON
+        events_raw = json.loads(response_text.strip())
+        
+        # Convert to our format with proper datetime objects
+        events = []
+        for event_raw in events_raw:
+            try:
+                event_type = event_raw.get('type', 'event')
+                
+                # Parse start time
+                start_text = event_raw.get('start_text', '')
+                start_dt = dateparser.parse(start_text, settings={"PREFER_DATES_FROM": "future"})
+                
+                if not start_dt:
+                    continue  # Skip if we can't parse the date
+                
+                # Handle events vs tasks differently
+                if event_type == 'task':
+                    # Tasks are all-day events
+                    end_dt = start_dt
+                else:
+                    # Parse end time for events
+                    end_text = event_raw.get('end_text', '1 hour')
+                    if end_text == '0' or end_text.lower() == 'none':
+                        end_dt = start_dt  # All-day event
+                    elif 'hour' in end_text.lower() or 'hr' in end_text.lower():
+                        # Extract number of hours
+                        try:
+                            hours = float(''.join(filter(str.isdigit, end_text.split()[0])))
+                            end_dt = start_dt + timedelta(hours=hours)
+                        except:
+                            end_dt = start_dt + timedelta(hours=1)
+                    else:
+                        end_dt = dateparser.parse(end_text, settings={"PREFER_DATES_FROM": "future"})
+                        if not end_dt:
+                            end_dt = start_dt + timedelta(hours=1)
+                
+                event = {
+                    "title": event_raw.get('title', 'Event'),
+                    "start": start_dt,
+                    "end": end_dt,
+                    "description": event_raw.get('description', ''),
+                    "location": event_raw.get('location'),
+                    "type": event_type,
+                    "all_day": (event_type == 'task' or end_dt == start_dt)
+                }
+                events.append(event)
+            except Exception as e:
+                print(f"Error parsing event: {e}")
+                continue
+        
+        return events
+        
+    except Exception as e:
+        print(f"Gemini API error: {e}, falling back to dateparser")
+        return extract_events_from_text(text, base_date)
 
 
 if __name__ == "__main__":

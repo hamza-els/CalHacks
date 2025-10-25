@@ -5,9 +5,13 @@ import os
 from pathlib import Path
 import json
 from datetime import datetime
+from dotenv import load_dotenv
 
-from parsers import extract_events_from_text
+from parsers import extract_events_from_text, extract_events_with_gemini
 from calendar_utils import create_google_service, create_google_event
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Allow HTTP for localhost OAuth (development only!)
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
@@ -148,7 +152,12 @@ def upload_file():
     
     # Extract events
     try:
-        events = extract_events_from_text(text)
+        # Try Gemini API if available, otherwise fall back to dateparser
+        use_gemini = os.environ.get('GEMINI_API_KEY') is not None
+        if use_gemini:
+            events = extract_events_with_gemini(text)
+        else:
+            events = extract_events_from_text(text)
         
         # Convert datetime objects to ISO strings for JSON serialization
         events_serialized = []
@@ -158,7 +167,9 @@ def upload_file():
                 'start': event['start'].isoformat(),
                 'end': event['end'].isoformat(),
                 'description': event.get('description', ''),
-                'location': event.get('location', '')
+                'location': event.get('location', ''),
+                'type': event.get('type', 'event'),
+                'all_day': event.get('all_day', False)
             })
         
         # Store events in session for later use
@@ -300,10 +311,15 @@ def create_events():
     if 'events' not in session:
         return jsonify({'error': 'No events found. Please upload and parse a file first.'}), 400
     
-    if not session.get('authenticated'):
+    # Check if authenticated by checking for token.json (more reliable than session)
+    has_token = os.path.exists('token.json')
+    if not has_token:
         return jsonify({'error': 'Not authenticated. Please sign in with Google first.'}), 401
     
     try:
+        # Get timezone from request or use default
+        user_timezone = request.json.get('timezone', 'America/Los_Angeles') if request.is_json else 'America/Los_Angeles'
+        
         service = create_google_service()
         events = session['events']
         created_events = []
@@ -316,7 +332,10 @@ def create_events():
             event['start'] = datetime.fromisoformat(event['start'])
             event['end'] = datetime.fromisoformat(event['end'])
             
-            result = create_google_event(service, event)
+            # Preserve all_day flag
+            event['all_day'] = event_data.get('all_day', False)
+            
+            result = create_google_event(service, event, timezone=user_timezone)
             created_events.append({
                 'title': event['title'],
                 'link': result.get('htmlLink')

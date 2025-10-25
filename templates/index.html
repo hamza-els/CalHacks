@@ -272,6 +272,7 @@
                 <table class="events-table">
                     <thead>
                         <tr>
+                            <th>Type</th>
                             <th>Title</th>
                             <th>Start</th>
                             <th>End</th>
@@ -436,9 +437,18 @@
             showStatus('Creating events in Google Calendar...', 'info');
             createBtn.disabled = true;
             
+            // Get user's timezone
+            const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            
             try {
                 const response = await fetch('/create-events', {
-                    method: 'POST'
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        timezone: userTimezone
+                    })
                 });
                 
                 const data = await response.json();
@@ -466,10 +476,15 @@
             
             events.forEach(event => {
                 const row = document.createElement('tr');
+                const eventType = event.type || 'event';
+                const typeBadge = eventType === 'task' ? '📝 Task' : '📅 Event';
+                const isAllDay = event.all_day || eventType === 'task';
+                
                 row.innerHTML = `
+                    <td>${typeBadge}</td>
                     <td>${event.title}</td>
-                    <td>${formatDate(event.start)}</td>
-                    <td>${formatDate(event.end)}</td>
+                    <td>${formatDate(event.start, isAllDay)}</td>
+                    <td>${isAllDay ? '-' : formatDate(event.end, false)}</td>
                     <td>${event.location || '-'}</td>
                 `;
                 eventsTableBody.appendChild(row);
@@ -478,8 +493,15 @@
             eventsSection.classList.add('show');
         }
         
-        function formatDate(isoString) {
+        function formatDate(isoString, isAllDay = false) {
             const date = new Date(isoString);
+            if (isAllDay) {
+                return date.toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                });
+            }
             return date.toLocaleString('en-US', {
                 month: 'short',
                 day: 'numeric',

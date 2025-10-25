@@ -47,6 +47,8 @@ Thumbs.db
 # Environment variables
 .env
 .env.local
+# Allow .env.example as a template
+!.env.example
 
 # Flask
 instance/

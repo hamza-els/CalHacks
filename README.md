@@ -1,266 +1,176 @@
-Quick decisions to make up front
+# 📅 Syllabus to Calendar Converter
 
-Who owns the calendar?
+A web application that extracts events and tasks from academic syllabi and automatically creates them in Google Calendar using AI-powered parsing.
 
-If the end user should get events in their Google Calendar, use OAuth 2.0 user consent flow (recommended for demos). (Google Calendar API). 
-Google for Developers
-+1
+## Features
 
-Parsing strategy: rule-based + temporal parser for high precision, or LLM-based extraction for flexibility. I recommend combining both: a deterministic date parser (chrono-node or Python dateparser/Duckling) plus an LLM (OpenAI) for extracting event semantics and fallbacks. (OpenAI function-calling and chrono-node docs). 
-OpenAI Platform
-+1
+- 🤖 **AI-Powered Parsing**: Uses Google Gemini AI to intelligently extract events from syllabi
+- 📝 **Smart Categorization**: Distinguishes between events (lectures, labs, exams) and tasks (assignments, projects)
+- 🌍 **Timezone Support**: Automatically detects and uses your local timezone
+- 📅 **Google Calendar Integration**: Direct integration with Google Calendar
+- 🎨 **Modern UI**: Clean, responsive web interface
 
-Architecture (high level)
+## Quick Start
 
-Frontend: React (Create React App or Next.js) — file upload UI, preview extracted events, “Create on Google Calendar” button.
+### Prerequisites
 
-Backend: Node.js + Express (or Next.js API routes) — receive file, extract text, parse events, transform into Google Calendar event objects, call Google Calendar API.
+- Python 3.8+
+- Google account
+- Gemini API key (free tier available)
 
-NLP/date parsing: combination of OpenAI function-calling (structured extraction) and chrono-node (or Duckling/dateparser) for robust date/time parsing.
+### 1. Install Dependencies
 
-Auth: Google OAuth2 for user calendar access (or service account if writing to a specific demo calendar you control).
+```bash
+pip install -r requirements.txt
+```
 
-Storage: temporary memory or small DB (SQLite) to store parsed events for preview (optional).
+### 2. Setup Google Cloud Project
 
-Deploy: Vercel / Render / Heroku for quick demo.
+#### Step 1: Create Google Cloud Project
 
-Tech stack (recommended — easiest path)
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Click "Select a project" → "New Project"
+3. Enter project name (e.g., "Syllabus Calendar") and click "Create"
 
-Primary (recommended):
+#### Step 2: Enable APIs
 
-Backend: Node.js (16+) + Express (or Next.js API routes)
+1. In your project, go to "APIs & Services" → "Library"
+2. Search for and enable:
+   - **Google Calendar API**
+   - **Google OAuth2 API**
 
-Frontend: React or Next.js
+#### Step 3: Create OAuth Credentials
 
-Google API client: googleapis (Node) — handles OAuth and calendar calls. 
-Google for Developers
+1. Go to "APIs & Services" → "Credentials"
+2. Click "Create Credentials" → "OAuth client ID"
+3. Select "Web application"
+4. **Add Authorized redirect URI**: `http://localhost:5000/oauth/callback`
+5. Click "Create"
+6. Download credentials as `credentials.json`
+7. Place `credentials.json` in the project root
 
-Date parser: chrono-node (npm) for natural-language dates. 
-npm
+#### Step 4: Configure OAuth Consent Screen
 
-Optional LLM: OpenAI API with function-calling / structured outputs to extract event fields reliably. 
-OpenAI Platform
+1. Go to "APIs & Services" → "OAuth consent screen"
+2. Select "External" → "Create"
+3. Fill in required fields:
+   - App name: Syllabus Calendar
+   - User support email: your email
+   - Developer contact: your email
+4. Click "Save and Continue"
+5. In "Scopes", click "Add or Remove Scopes"
+6. Add scopes:
+   - `.../auth/calendar.events`
+   - `.../auth/userinfo.email`
+   - `.../auth/userinfo.profile`
+7. Save and continue
+8. Add test users (your email) if needed
+9. Back to "Credentials", click "Edit" on your OAuth client
+10. Under "Authorized redirect URIs", add: `http://localhost:5000/oauth/callback`
+11. Save
 
-PDF text extraction: pdf-parse or pdfjs (if users upload PDFs)
+### 3. Setup Gemini API (Optional)
 
-File upload middleware: multer (Node)
+1. Go to [Google AI Studio](https://aistudio.google.com/apikey)
+2. Click "Create API Key"
+3. Copy the API key
 
-Timezone/formatting: luxon or date-fns-tz
+### 4. Create .env File
 
-Alternate (Python)
+Create a `.env` file in the project root:
 
-Backend: FastAPI or Flask
+```env
+GEMINI_API_KEY=your-gemini-api-key-here
+SECRET_KEY=dev-secret-key-change-in-production
+```
 
-Google client: google-api-python-client
+> **Note**: Gemini API is optional - the app falls back to basic date parsing if not provided.
 
-Date parsing: dateparser, quickadd or Duckling (via wrapper) for robust parsing. 
-GitHub
-+1 
+### 5. Run the Application
 
-LLM: OpenAI Python SDK (function-calling / structured outputs)
+```bash
+python app.py
+```
 
-Step-by-step implementation (Node.js + React demo)
-0) Prep & accounts
+Open your browser and navigate to: **http://localhost:5000**
 
-Create Google Cloud project → enable Google Calendar API. 
-Google for Developers
+## Usage
 
-Create OAuth 2.0 credentials (Web application). Add redirect URI for your app (e.g., http://localhost:3000/oauth2callback). Download client_secret.json. 
-Google for Developers
+1. **Sign in with Google**: Click "Sign in with Google" in the header
+2. **Upload Syllabus**: Click "Choose File" and select your syllabus (.txt format)
+3. **Parse Events**: Click "Parse Events" to extract events and tasks
+4. **Review**: Check the extracted events (indicated as 📅 Event or 📝 Task)
+5. **Create Calendar**: Click "Add to Google Calendar" to create events
 
-(If you’ll use OpenAI) Create OpenAI API key. Read function-calling docs to output structured JSON. 
-OpenAI Platform
+## Project Structure
 
-1) Scaffold the repo
+```
+CalHacks/
+├── app.py                  # Flask web server
+├── parsers.py              # Event extraction logic (Gemini AI + dateparser)
+├── calendar_utils.py       # Google Calendar integration
+├── credentials.json        # Google OAuth credentials (add this)
+├── token.json             # User authentication token (auto-generated)
+├── .env                   # Environment variables (create this)
+├── requirements.txt       # Python dependencies
+├── templates/
+│   └── index.html         # Web UI
+└── examples/
+    └── sample_syllabus.txt # Sample test file
+```
 
-npx create-next-app syllabus2calendar (or CRA + Express)
+## Features Explained
 
-Add backend API route POST /api/parse and POST /api/create-events
+### Event vs Task
 
-Install libs:
+- **Events**: Lectures, labs, discussions, exams, meetings
+  - Have specific start and end times
+  - Show location if mentioned
+  
+- **Tasks**: Assignments, projects, homework
+  - Only have due dates (all-day events)
+  - No time component
 
-npm i googleapis chrono-node multer pdf-parse luxon axios openai
+### Timezone Handling
 
-2) Frontend: file upload & preview
+The app automatically detects your browser's timezone and uses it for all calendar events. No manual configuration needed!
 
-Build a simple page:
+## Troubleshooting
 
-File input (accept .txt, .pdf, .docx optional)
+### "redirect_uri_mismatch" Error
 
-“Parse” button → sends file to /api/parse
+- Make sure `http://localhost:5000/oauth/callback` is added to Authorized redirect URIs in Google Cloud Console
 
-Show parsed events in a table with checkboxes and editable fields (title, date/time, duration, location, description)
+### "access_denied" Error
 
-“Sign in with Google” / “Create events” button
+- Add your email as a test user in OAuth consent screen
+- Make sure OAuth consent screen is published or in testing mode
 
-UI libs: plain React + Tailwind for quick styling.
+### Events Times Are Wrong
 
-3) Backend: receive file and extract text
+- The app now uses your local timezone automatically
+- If issues persist, check your browser's timezone settings
 
-Use multer to accept uploads.
+### Gemini API Not Working
 
-If PDF: use pdf-parse to get text.
+- The app automatically falls back to dateparser if Gemini API key is not set
+- Gemini API is completely optional for basic functionality
 
-If text: read as UTF-8.
+## Requirements
 
-Example (rough):
+- Python 3.8+
+- Google Cloud account
+- Google account for calendar access
+- Gemini API key (optional, free tier available)
 
-// /api/parse
-const text = await extractTextFromUpload(file);
+## Technologies Used
 
-4) NLP → structured events
+- **Backend**: Flask (Python)
+- **AI Parsing**: Google Gemini AI
+- **Calendar**: Google Calendar API
+- **Date Parsing**: dateparser
+- **Frontend**: HTML/CSS/JavaScript
 
-Approach A (fast, deterministic):
+## License
 
-Split doc into lines/sections based on headings (e.g., "Week 1", "Exam", dates).
-
-For each candidate sentence/line, run chrono-node.parse() to find dates/times. If a date is found, treat the surrounding text as an event title/description. 
-npm
-
-Normalize start/end using luxon and default duration (e.g., 1 hour for lectures) unless specified.
-
-Approach B (LLM-assisted, higher recall):
-
-Send the full text or chunks to OpenAI with a JSON schema/function asking: extract events with fields:
-
-title, start (ISO), end (ISO or duration), all_day (bool), recurrence (iCal RRULE or human), location, notes.
-
-Use OpenAI function-calling or structured outputs to get consistent JSON. Then run chrono-node on any remaining fuzzy date strings the model returns (to improve deterministic parsing). 
-OpenAI Platform
-+1
-
-Sample OpenAI function schema (conceptual):
-
-{
-  "name": "extract_events",
-  "description": "Extract events from syllabus",
-  "parameters": {
-    "type":"object",
-    "properties":{
-      "events":{
-        "type":"array",
-        "items":{
-          "type":"object",
-          "properties":{
-            "title":{"type":"string"},
-            "start_text":{"type":"string"},
-            "end_text":{"type":"string"},
-            "all_day":{"type":"boolean"},
-            "location":{"type":"string"},
-            "notes":{"type":"string"}
-          },
-          "required":["title","start_text"]
-        }
-      }
-    }
-  }
-}
-
-
-After the LLM returns start_text/end_text, parse them with chrono-node into exact ISO datetimes.
-
-(See OpenAI function-calling docs). 
-OpenAI Platform
-
-5) Normalize & validate events
-
-Run each candidate start_text / end_text through chrono-node (or Python dateparser) to get start and end datetimes. If only duration provided, compute end = start + duration.
-
-Validate: start < end; timezone present — if not, attach user’s timezone.
-
-Allow user edit on frontend before upload to calendar.
-
-6) Google Calendar insertion
-
-Implement OAuth 2.0: redirect user to Google consent, get tokens, store in session. googleapis has sample quickstarts. 
-Google for Developers
-
-Use calendar.events.insert() to create events (events.insert) — supply start / end either as dateTime (with tz) or date for all-day. 
-Google for Developers
-
-Minimal Node snippet:
-
-const {google} = require('googleapis');
-const calendar = google.calendar({version: 'v3', auth: oauth2Client});
-await calendar.events.insert({
-  calendarId: 'primary',
-  resource: {
-    summary: title,
-    description: notes,
-    start: { dateTime: startIso, timeZone: 'America/Los_Angeles' },
-    end: { dateTime: endIso, timeZone: 'America/Los_Angeles' },
-    location,
-  }
-});
-
-7) Edge cases & features to add
-
-Recurring events (weekly class): try to detect patterns like “every Monday 10–11am” and set an RRULE recurrence. If detected, build recurrence: ['RRULE:FREQ=WEEKLY;BYDAY=MO;COUNT=12'].
-
-Exams and fixed deadlines: treat as single events or all-day events.
-
-Ambiguous dates: present to user for confirmation if parser confidence low.
-
-Time references like “Week 3”: require mapping from syllabus start date or manual anchor input.
-
-Attachment of syllabus to event (add link to notes).
-
-8) Testing & validation
-
-Use a few real syllabi from different instructors — test variations in date formats (e.g., “9/3”, “Sept. 3”, “Thursday Week 2”).
-
-Add unit tests for the parser: give sample sentences and assert expected extracted ISO datetimes.
-
-Manual tests: preview UI, modify event objects, then create on calendar.
-
-Minimal viable demo timeline (one dev)
-
-Day 1: Setup project, Google API credentials, basic upload and text extraction, simple chrono-node tests.
-
-Day 2: Implement parsing pipeline (rule-based) + frontend preview.
-
-Day 3: Add OAuth + calendar create; end-to-end flow.
-
-Day 4: Improve extraction with OpenAI function-calling (optional), add recurrence heuristics, polish UI.
-
-Example mapping: text → event object (JSON)
-{
-  "title": "Intro to Algorithms (Lecture)",
-  "start": "2025-09-03T10:00:00-07:00",
-  "end": "2025-09-03T11:00:00-07:00",
-  "all_day": false,
-  "recurrence": ["RRULE:FREQ=WEEKLY;BYDAY=WE;COUNT=13"],
-  "location": "Room 101",
-  "notes": "Read Chapter 1 before class"
-}
-
-Helpful libraries & docs (quick references)
-
-Google Calendar API quickstart (Node): step-by-step for OAuth and the API. 
-Google for Developers
-
-Google Calendar create events guide (events.insert): explains required fields. 
-Google for Developers
-
-chrono-node (JS natural language date parsing). 
-npm
-
-OpenAI Function Calling & structured output (for reliably extracting JSON from text). 
-OpenAI Platform
-+1
-
-Duckling (alternative date/time parser) and wrappers if you want a heavyweight but robust extractor. 
-GitHub
-+1
-
-Tips, pitfalls & best practices
-
-Timezones matter. Always include timezone in calendar event datetimes. Default to user timezone (ask or detect).
-
-Rate limits & quotas. Google and LLM APIs have quotas — batch event creation carefully.
-
-Parsing ambiguity: Syllabi are inconsistent (e.g., “midterm in October” vs “Week 7”). Use human-in-the-loop preview before creating events.
-
-Privacy: if using OpenAI, remember you are sending potentially private course content — disclose it in demo.
-
-Service account vs user OAuth: service accounts are easier for writing into a calendar you control; to write into users’ calendars, you need OAuth consent.
+See LICENSE file for details.
