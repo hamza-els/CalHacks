@@ -143,8 +143,12 @@ def upload_file():
             with open(filepath, 'r', encoding='utf-8') as f:
                 text = f.read()
         elif filename.endswith('.pdf'):
-            # For now, just read as text. Install pdf-parse for proper PDF support
-            return jsonify({'error': 'PDF support coming soon. Please use .txt files for now.'}), 400
+            # Extract text from PDF using pdfplumber
+            import pdfplumber
+            text = ''
+            with pdfplumber.open(filepath) as pdf:
+                for page in pdf.pages:
+                    text += page.extract_text() + '\n'
         else:
             return jsonify({'error': 'Unsupported file type'}), 400
     except Exception as e:
