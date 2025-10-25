@@ -1056,6 +1056,10 @@
             clearInterval(gameState.pipeInterval);
             clearInterval(gameState.timeInterval);
             
+            // Play game over sound
+            gameSounds.gameOver.currentTime = 0; // Reset to beginning
+            gameSounds.gameOver.play().catch(e => console.log('Game over sound play failed:', e));
+            
             const ctx = gameState.ctx;
             ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
             ctx.fillRect(0, 0, gameState.canvas.width, gameState.canvas.height);
@@ -1143,7 +1147,8 @@
         // Sound system
         const gameSounds = {
             pipePassed: new Audio('/assets/8-bit-powerup-6768.mp3'),
-            jump: new Audio('/assets/075176_duck-quack-40345-[AudioTrimmer.com].mp3')
+            jump: new Audio('/assets/075176_duck-quack-40345-[AudioTrimmer.com].mp3'),
+            gameOver: new Audio('/assets/VOXScrm_Wilhelm scream (ID 0477)_BSB-[AudioTrimmer.com].mp3')
         };
         
         // Preload sounds
