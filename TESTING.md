@@ -27,9 +27,13 @@ If you don't have credentials yet:
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
 2. Create a new project or select existing one
 3. Enable Google Calendar API
-4. Create OAuth 2.0 credentials (Web application)
-5. Download credentials as `credentials.json`
-6. Place in project root
+4. Go to "Credentials" → "Create Credentials" → "OAuth client ID"
+5. Select "Web application" as the application type
+6. **Add authorized redirect URI**: `http://localhost:5000/oauth/callback`
+7. Save and download credentials as `credentials.json`
+8. Place in project root
+
+**⚠️ IMPORTANT**: The redirect URI MUST be exactly `http://localhost:5000/oauth/callback`
 
 ## Running the Application
 
@@ -121,12 +125,22 @@ Test with files containing:
 - Save as `credentials.json` in project root
 - Ensure file is not in `.gitignore` accidentally
 
+### Issue: "Error 400: redirect_uri_mismatch"
+
+**Solution:**
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Navigate to your project → "APIs & Services" → "Credentials"
+3. Click on your OAuth 2.0 Client ID
+4. Under "Authorized redirect URIs", add: `http://localhost:5000/oauth/callback`
+5. Save the changes
+6. Delete `token.json` and try again
+
 ### Issue: "Error authenticating"
 
 **Solution:**
 - Delete `token.json` and try again
 - Check that OAuth consent screen is configured in Google Cloud Console
-- Ensure redirect URI includes `http://localhost:5000`
+- Ensure redirect URI includes `http://localhost:5000/oauth/callback`
 
 ### Issue: "No events found"
 
@@ -148,6 +162,13 @@ Test with files containing:
 ```bash
 pip install --upgrade -r requirements.txt
 ```
+
+### Issue: "InsecureTransportError: OAuth 2 MUST utilize https"
+
+**Solution:**
+- This is already fixed in `app.py` (HTTP allowed for localhost only)
+- If you see this error, restart the Flask server
+- The app automatically sets `OAUTHLIB_INSECURE_TRANSPORT=1` for development
 
 ## Expected Behavior
 

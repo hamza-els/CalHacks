@@ -14,6 +14,8 @@ pip install -r requirements.txt
 python app.py
 ```
 
+**Note:** The app automatically allows HTTP for localhost OAuth (development only).
+
 ### Step 3: Open in Browser
 
 Navigate to: **http://localhost:5000**
@@ -34,9 +36,12 @@ Before using Google Calendar features, you need OAuth credentials:
 
 1. Visit [Google Cloud Console](https://console.cloud.google.com/)
 2. Create project → Enable Calendar API
-3. Create OAuth 2.0 credentials
-4. Download as `credentials.json`
-5. Place in project root
+3. Create OAuth 2.0 credentials (Web application)
+4. **Add redirect URI**: `http://localhost:5000/oauth/callback`
+5. Download as `credentials.json`
+6. Place in project root
+
+**⚠️ CRITICAL**: The redirect URI must be added in Google Cloud Console!
 
 See `TESTING.md` for detailed instructions.
 
@@ -69,6 +74,9 @@ CalHacks/
 
 **"credentials.json not found"**
 → Download OAuth credentials from Google Cloud Console
+
+**"Error 400: redirect_uri_mismatch"**
+→ Add `http://localhost:5000/oauth/callback` to authorized redirect URIs in Google Cloud Console
 
 **"No events found"**
 → Ensure your text file contains date/time information

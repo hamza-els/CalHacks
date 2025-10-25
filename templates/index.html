@@ -235,6 +235,16 @@
         <div class="header">
             <h1>📅 Syllabus to Calendar</h1>
             <p>Upload your syllabus and automatically create calendar events</p>
+            <div id="authStatus" style="margin-top: 20px; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 20px; display: none;">
+                <div id="authContent" style="display: flex; align-items: center; gap: 10px;">
+                    <img id="userPicture" src="" style="width: 32px; height: 32px; border-radius: 50%; display: none;">
+                    <span id="authText">Checking authentication...</span>
+                    <a href="/signout" id="signOutBtn" style="margin-left: auto; color: white; text-decoration: underline; display: none;">Sign Out</a>
+                </div>
+            </div>
+            <div style="margin-top: 15px;">
+                <a href="/oauth" class="google-btn" id="signInBtn">🔐 Sign in with Google</a>
+            </div>
         </div>
         
         <div class="content">
@@ -273,7 +283,6 @@
                 </table>
                 
                 <div class="actions">
-                    <a href="/oauth" class="google-btn">🔐 Sign in with Google</a>
                     <button class="btn btn-success" id="createBtn" disabled>Add to Google Calendar</button>
                 </div>
             </div>
@@ -290,8 +299,70 @@
         const eventsTableBody = document.getElementById('eventsTableBody');
         const eventsCount = document.getElementById('eventsCount');
         const uploadSection = document.getElementById('uploadSection');
+        const authStatus = document.getElementById('authStatus');
+        const authText = document.getElementById('authText');
+        const authContent = document.getElementById('authContent');
+        const userPicture = document.getElementById('userPicture');
+        const signOutBtn = document.getElementById('signOutBtn');
+        const signInBtn = document.getElementById('signInBtn');
         
         let selectedFile = null;
+        let isAuthenticated = false;
+        
+        // Check authentication status on page load
+        async function checkAuthStatus() {
+            try {
+                const response = await fetch('/auth-status');
+                const data = await response.json();
+                isAuthenticated = data.authenticated;
+                
+                if (isAuthenticated) {
+                    // Show user info if available
+                    if (data.user) {
+                        const user = data.user;
+                        authText.textContent = `✅ Signed in as ${user.email || user.name || 'Google User'}`;
+                        
+                        // Show user picture if available
+                        if (user.picture) {
+                            userPicture.src = user.picture;
+                            userPicture.style.display = 'block';
+                        }
+                    } else {
+                        // Authenticated but couldn't fetch user info
+                        authText.textContent = '✅ Signed in with Google';
+                        userPicture.style.display = 'none';
+                    }
+                    
+                    // Show sign-out button
+                    signOutBtn.style.display = 'block';
+                    
+                    // Hide sign-in button
+                    signInBtn.style.display = 'none';
+                    
+                    authStatus.style.display = 'block';
+                    authStatus.style.border = '2px solid #4caf50';
+                } else {
+                    // Not signed in
+                    authText.textContent = '⚠️ Not signed in';
+                    userPicture.style.display = 'none';
+                    signOutBtn.style.display = 'none';
+                    signInBtn.style.display = 'inline-block';
+                    
+                    authStatus.style.display = 'block';
+                    authStatus.style.border = '2px solid #ff9800';
+                }
+            } catch (error) {
+                console.error('Error checking auth status:', error);
+            }
+        }
+        
+        // Check auth status when page loads
+        checkAuthStatus();
+        
+        // Check if we're returning from OAuth (indicated by URL or session)
+        if (window.location.search.includes('code=') || window.location.hash.includes('code=')) {
+            setTimeout(checkAuthStatus, 1000); // Check again after a delay
+        }
         
         // File input change
         fileInput.addEventListener('change', (e) => {
@@ -345,7 +416,11 @@
                 if (data.success) {
                     showStatus(`Successfully parsed ${data.count} events!`, 'success');
                     displayEvents(data.events);
-                    createBtn.disabled = false;
+                    // Only enable if authenticated
+                    createBtn.disabled = !isAuthenticated;
+                    if (!isAuthenticated) {
+                        showStatus('⚠️ Please sign in with Google to create events', 'info');
+                    }
                 } else {
                     showStatus(`Error: ${data.error}`, 'error');
                 }
