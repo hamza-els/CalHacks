@@ -1,0 +1,495 @@
+Course description
+
+How should engineers analyze and resolve the ethical issues inherent in engineering?
+
+This seminar-like course is designed to introduce undergraduate students to the concepts and exercise of ethical practice in the engineering discipline.  As the boundaries between science, engineering and technology are increasingly blurred, this course will take a maximally broad interpretation of engineering ethics, and thus we will draw from case studies from all STEM fields as well as the field of medical research. 
+
+The weekly two-hour plenary class will make frequent use of videos and prominent guest lecturers, which will be the launching point for highly interactive discussions, short in-class polls, and exercises.  The parallel discussion sessions will be dedicated to reviewing important case studies in the engineering discipline, student presentations on “Ethics in the News”, and real-time team exercises, e.g. mock Institutional Review Board (IRB) for human subject research proposals. 
+
+A topic of special interest will be Research Integrity, to prepare the students for actual ethical challenges they would encounter after joining a research group of a faculty Principal Investigator.
+
+ 
+
+Course objectives
+
+    Understand professional responsibilities and define personal professional values
+    Build, practice, and demonstrate analytical skills for evaluating ethical dilemmas within engineering
+        Recognize ethical dilemmas
+        Analyze contexts
+        Apply various ethical frameworks
+    Build, practice, and demonstrate communication skills for discourse related to ethical dilemmas within engineering
+        Engage with different sources of information
+        Lead discussions with peers
+        Determine, justify, communicate a recommended course of action
+    Introduce theories, concepts, methods from the humanities which can be applied to ethical analysis in engineering
+
+ 
+
+Units & Sections
+
+This is a 3-unit course.
+
+The weekly plenary class will be held on Friday, 3:00-5:00 p.m., in 2050 Valley Life Sciences Building.
+
+ 
+
+Discussion 101 – M 4-5 pm; Cory 289 (GSIs: Michael B, Mackenzie)
+
+Discussion 102 – W 3-4 pm; Wurster 101 (GSIs: Max, Thibault)
+
+Discussion 103 – W 4-5 pm; Wheeler 120 (GSIs: Michael S, Naryman)
+
+Discussion 104 – F 12-1 pm; Dwinelle 223 (GSIs: Minkush, Sushanti)
+
+Discussion 105 – M 2-3 pm; Cory 289 (GSIs: Max, Naryman) 
+
+Discussion 106 – W 2-3 pm; Cory 289 (GSIs: Sushanti, Thibault)
+
+Discussion 107 – F 10-11 am; Cory 289 (GSIs: Michael B, Ernest)
+
+Discussion 108 – F 11-12 pm; Wheeler 200 (GSIs: Minkush, Mackenzie)
+
+Discussion 109 – M 10-11 am; Wheeler 200 (GSIs: Ernest, Nathan)
+
+Discussion 110 – M 12-1 pm; Etcheverry 3107 (GSIs: Michael S, Nathan)
+
+ 
+(M/W/F) EIN 	Monday 	Wednesday 	Friday
+			
+- / Practice EIN / Practice EIN 	9/1/2025 	9/3/2025 	9/5/2025
+Practice EIN / EIN 1 / EIN 1 	9/8/2025 	9/10/2025 	9/12/2025
+EIN 1 / EIN 2 / EIN 2 	9/15/2025 	9/17/2025 	9/19/2025
+EIN 2 / EIN 3 / EIN 3 	9/22/2025 	9/24/2025 	9/26/2025
+EIN 3 / EIN 4 / EIN 4 	9/29/2025 	10/1/2025 	10/3/2025
+EIN 4 / EIN 5 / EIN 5 	10/6/2025 	10/8/2025 	10/10/2025
+EIN 5 / EIN 6 / EIN 6 	10/13/2025 	10/15/2025 	10/17/2025
+EIN 6 / EIN 7 / EIN 7 	10/20/2025 	10/22/2025 	10/24/2025
+EIN 7 / EIN 8 / EIN 8 	10/27/2025 	10/29/2025 	10/31/2025
+MOCK IRB 	11/3/2025 	11/5/2025 	11/7/2025
+EIN 8 / EIN 9 / EIN 9 	11/10/2025 	11/12/2025 	11/14/2025
+EIN 9 / EIN 10 / EIN 10 	11/17/2025 	11/19/2025 	11/21/2025
+EIN 10 / - / - 	11/24/2025 	11/26/2025 	11/28/2025
+EIN 11 / EIN 11 / EIN 11 	12/1/2025 	12/3/2025 	12/5/2025
+
+ 
+
+Grading Rubric
+
+Active participation is extremely important in this class and will be reflected by many low-value polls and quizzes during the lecture (most often requiring one or two sentences or responding to a multiple-choice survey question) and discussion section.
+
+Participation in the lecture
+	
+
+Evaluated by:  Attendance, active engagement; demonstrated immersion in topics, readings, and concepts by microsurveys.   
+	
+
+25%
+
+Participation in the discussion section
+	
+
+Evaluated by:  Attendance, preparedness, active engagement.
+	
+
+25%
+
+Formal exercises in the discussion section
+	
+
+Evaluated by:  Structured work, including Ethics in the News (EIN), oral and written analysis, mock IRB review.
+	
+
+25%
+
+Two analysis papers (3 pp mid-semester, 3-5 pp final)
+	
+
+Evaluated by:  Clarity and thesis, organization, originality, application of reading/concepts, depth of analysis.
+	
+
+25%
+
+ 
+
+Berkeley Honor Code
+
+“As a member of the UC Berkeley community, I act with honesty, integrity, and respect for others.”
+
+These values are defined by our campus. All students are expected to strive to demonstrate honesty, integrity, and respect for others both within and outside the classroom. This includes respect within class discussions and respectful and honest use of technology during class.
+
+https://teaching.berkeley.edu/berkeley-honor-code
+
+ 
+
+Policy on Use of Generative AI
+
+In accordance with Code of Student Conduct regarding plagiarism and the Berkeley Honor Code, any work submitted as your own should be your own original work. Generative AI may be used as a resource that is properly cited, but it may not be used to produce work that you then submit as your own, just as you may not copy a peer’s work.
+
+ 
+
+Accommodations
+
+If you require course accommodations due to a physical, emotional, or learning disability, contact UC Berkeley’s Disabled Students’ Program (DSP). Notify the instructor and GSI through email of the accommodations you would like to use. You should have a Letter of Accommodation on file with UC Berkeley to have accommodations made in the course. Our goal is to maintain enough flexibility in the course expectations that all students might have a positive learning experience.  If you have an accommodation, it is strongly recommended that you meet with the Professor early in the semester.
+
+Topics by week (Friday lecture)
+
+ 
+
+ Week
+	
+
+Date
+	
+
+Topic
+	
+
+Presenter
+	
+
+Please read/watch before class
+	
+
+Assignment due
+
+1
+	
+
+Aug 29
+	
+
+Introduction
+	
+
+Karl van Bibber
+	
+
+ 
+	
+
+ 
+
+2
+	
+
+Sept 5
+	
+
+Philosophical Foundations of Ethics
+	
+
+Miguel Garcia- Valdecasas
+	
+
+ 
+	
+
+ 
+
+3
+	
+
+Sept 12
+	
+
+Oppenheimer: Part I
+	
+
+Documentary:
+“The Day After Trinity”
+	
+
+“The Slippery Slope of Scientific Ethics”, Deborah Poskanzer
+
+Oppenheimer Panel: https://news.berkeley.edu/2023/08/16/berkeley-talks-oppenheimers-berkeley-years/
+	
+
+ 
+
+4
+	
+
+Sept 19
+	
+
+Emotions in Ethical
+Decision Making
+	
+
+Bill Kastenberg
+		
+
+5
+	
+
+Sept 26
+	
+
+Oppenheimer:  Part II
+	
+
+Jon Else,
+
+Producer & Director
+	
+
+ 
+	
+
+ 
+
+6
+	
+
+Oct 3
+	
+
+The Ethics of Big Data; Europe’s GDPR
+	
+
+Christopher Hoofnagle
+	
+
+ 
+	
+
+ 
+
+7
+	
+
+Oct 10
+	
+
+Human Subjects Research
+	
+
+Adrienne Tanner & CPHS team
+	
+
+“The Immortal Life of Henrietta Lacks”, book by Rebecca Skloot or watch movie with Oprah Winfrey
+	
+
+ 
+
+8
+	
+
+Oct 17
+	
+
+Research Integrity
+	
+
+Frances Houle
+	
+
+“On Being a Scientist”, National Academies Press (3rd edition, 2009)
+	
+
+ 
+
+9
+	
+
+Oct 24
+	
+
+Genetic engineering
+	
+
+Lea Witkowsky
+	
+
+ 
+	
+
+Mid-semester paper due October 20
+
+10
+	
+
+Oct 31
+	
+
+Artificial Intelligence & Future of Work
+	
+
+Deborah Donig
+	
+
+ 
+	
+
+ 
+
+11
+	
+
+Nov 7
+	
+
+(1) NASA: The Columbia shuttle STS-107 Disaster and investigation
+
+(2) The rise and fall of Boeing
+	
+
+G. Scott Hubbard
+
+ 
+
+ 
+
+Brian Barsky
+	
+
+https://www.edwardtufte.com/bboard/q-and-a-fetch-msg?msg_id=0001yB
+
+Links to an external site.
+	
+
+ 
+
+12
+	
+
+Nov 14
+	
+
+Ethical issues of nuclear power
+	
+
+Raluca Scarlat
+	
+
+ 
+	
+
+ 
+
+13
+	
+
+Nov 21
+	
+
+Energy Justice & Ethics of Climate Change
+	
+
+Max Auffhammer
+	
+
+ 
+	
+
+ 
+
+14
+	
+
+Nov 28
+	
+
+Thanksgiving Holiday
+	
+
+ 
+	
+
+ 
+	
+
+ 
+
+15
+	
+
+Dec 5
+	
+
+The ethics of autonomous warfare
+	
+
+George R. Lucas
+	
+
+ 
+	
+
+ 
+
+16
+	
+
+Dec 8
+	
+
+RRR week
+	
+
+ 
+	
+
+ 
+	
+
+ 
+
+17
+	
+
+Dec 15
+	
+
+Finals week
+	
+
+ 
+	
+
+ 
+	
+
+Final analysis paper due Monday 12/15
+
+ 
+
+ 
+
+Office Hours
+
+Professor office hours:  Mondays 1-2 p.m., Thursdays 12-1 p.m., 4107 Etcheverry Hall
+
+TA’s office hours:
+
+Sushanti: Wednesday 1-2 PM South Hall Lounge (or Zoom)
+
+Minkush: Friday 1-2 PM South Hall Co-Lab
+
+Michael Borrello: Mondays & Tuesday 11AM-12PM Etcheverry 4116 or By Appointment (michael.borrello@berkeley.edu)
+
+Michael Sekatchev: Friday 12-1 PM Etcheverry Hall #4126 (please email first!) or By Appointment
+
+Max: Friday 2-3 PM Etcheverry Hall #4126 or By Appointment [Cancelled Week of Sept 29 - please email me if you would like to request a meeting]
+
+Thibault : Wednesday 4-5 PM, Etcheverry 1106, or By Appointment
+
+Mackenzie Wooten Friday 12-1 PM V&A cafe (email first) (mwooten@berkeley.edu)
+
+ 
+
+Course Tools
+
+Poll Everywhere: Register using these instructions.
+
+ 
+
+Reading
+
+“On Being A Scientist: A Guide to Responsible Conduct in Research”, National Academies Press (2009), free download at   https://nap.nationalacademies.org/catalog/12192/on-being-a-scientist-a-guide-to-responsible-conduct-in
+
+Links to an external site.
+
+Selected cases from “The Ethical Engineer: Contemporary Concepts and Cases”, Robert McGinn (2018), Princeton University Press (will be posted on bCourse site).
+
+Students in the class can receive a free digital subscription to both the Wall Street Journal and the New York Times.  You should read one or both daily; in particular the coverage of technology and corporate ethics by the Wall Street Journal is comprehensive and incisive.  Following their stories, often by their own investigative reporting, will be essential to the “Ethics in the News” sessions in the discussion sections. Instructions to get free subscriptions to the NYT, WSJ and other journals are found here:
