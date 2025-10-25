@@ -67,16 +67,26 @@ def create_google_event(service, event: Dict, calendar_id: str = "primary", time
     timezone: IANA timezone string (default: America/Los_Angeles)
     Returns the created event resource.
     """
+    # Validate required fields
+    if not event.get("title"):
+        raise ValueError("Event title is required")
+    
+    start_dt = event.get("start")
+    end_dt = event.get("end")
+    
+    if not start_dt or not end_dt:
+        raise ValueError("Event start and end times are required")
+    
     # Check if this is an all-day event
     is_all_day = event.get("all_day", False)
-    
-    # Ensure timezone is included in the datetime ISO string
-    start_dt = event["start"]
-    end_dt = event["end"]
     
     # Handle all-day events vs timed events
     if is_all_day:
         # For all-day events, use date field (no time component)
+        # Ensure we have valid dates
+        if not hasattr(start_dt, 'strftime') or not hasattr(end_dt, 'strftime'):
+            raise ValueError("Invalid datetime objects for all-day event")
+            
         body = {
             "summary": event.get("title"),
             "description": event.get("description"),
@@ -90,8 +100,9 @@ def create_google_event(service, event: Dict, calendar_id: str = "primary", time
         }
     else:
         # For timed events, use dateTime with timezone
-        # If datetime is naive, format it as if it's already in the specified timezone
-        # Don't convert to UTC - Google Calendar will interpret naive times in the specified timezone
+        # Validate datetime objects
+        if not hasattr(start_dt, 'strftime') or not hasattr(end_dt, 'strftime'):
+            raise ValueError("Invalid datetime objects for timed event")
         
         # Format datetime without timezone if naive
         if start_dt.tzinfo is None:
@@ -103,6 +114,10 @@ def create_google_event(service, event: Dict, calendar_id: str = "primary", time
             end_str = end_dt.strftime("%Y-%m-%dT%H:%M:%S")
         else:
             end_str = end_dt.isoformat()
+        
+        # Validate that start is before end
+        if start_dt >= end_dt:
+            raise ValueError(f"Start time ({start_dt}) must be before end time ({end_dt})")
         
         body = {
             "summary": event.get("title"),

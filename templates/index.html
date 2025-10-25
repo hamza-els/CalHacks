@@ -880,6 +880,9 @@
                 if (!pipe.passed && pipe.x + pipe.width < gameState.bird.x) {
                     pipe.passed = true;
                     gameState.score++;
+                    // Play pipe passed sound
+                    gameSounds.pipePassed.currentTime = 0; // Reset to beginning
+                    gameSounds.pipePassed.play().catch(e => console.log('Sound play failed:', e));
                     document.getElementById('gameScore').textContent = `Time: ${gameState.timeScore} | Pipes: ${gameState.score}`;
                 }
                 
@@ -980,6 +983,17 @@
                 clearInterval(gameState.timeInterval);
             }
         }
+        
+        // Sound system
+        const gameSounds = {
+            pipePassed: new Audio('/assets/8-bit-powerup-6768.mp3')
+        };
+        
+        // Preload sounds
+        Object.values(gameSounds).forEach(sound => {
+            sound.preload = 'auto';
+            sound.volume = 0.3; // Set volume to 30%
+        });
         
         // Event listeners for game
         const gameCanvas = document.getElementById('gameCanvas');

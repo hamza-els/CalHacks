@@ -16,7 +16,7 @@ load_dotenv()
 # Allow HTTP for localhost OAuth (development only!)
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='assets')
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
 
 # Configuration
@@ -321,39 +321,46 @@ def create_events():
         return jsonify({'error': 'Not authenticated. Please sign in with Google first.'}), 401
     
     try:
-        # Get timezone and event indices from request
-        if request.is_json:
-            user_timezone = request.json.get('timezone', 'America/Los_Angeles')
-            event_indices = request.json.get('event_indices', None)
-        else:
-            user_timezone = 'America/Los_Angeles'
-            event_indices = None
+        # Get timezone from request or use default
+        user_timezone = request.json.get('timezone', 'America/Los_Angeles') if request.is_json else 'America/Los_Angeles'
         
         service = create_google_service()
         events = session['events']
         created_events = []
         
-        # Filter events based on checked indices
-        events_to_create = events
-        if event_indices is not None:
-            events_to_create = [events[i] for i in event_indices if 0 <= i < len(events)]
-        
-        for event_data in events_to_create:
-            # Create a copy of the event to avoid modifying session data
-            event = event_data.copy()
-            
-            # Convert ISO strings back to datetime objects
-            event['start'] = datetime.fromisoformat(event['start'])
-            event['end'] = datetime.fromisoformat(event['end'])
-            
-            # Preserve all_day flag
-            event['all_day'] = event_data.get('all_day', False)
-            
-            result = create_google_event(service, event, timezone=user_timezone)
-            created_events.append({
-                'title': event['title'],
-                'link': result.get('htmlLink')
-            })
+        for event_data in events:
+            try:
+                # Create a copy of the event to avoid modifying session data
+                event = event_data.copy()
+                
+                # Convert ISO strings back to datetime objects
+                start_dt = datetime.fromisoformat(event['start'])
+                end_dt = datetime.fromisoformat(event['end'])
+                
+                # Validate datetime objects
+                if not start_dt or not end_dt:
+                    print(f"Skipping event '{event['title']}': Invalid datetime values")
+                    continue
+                
+                # Check for valid time range
+                if start_dt >= end_dt:
+                    print(f"Skipping event '{event['title']}': Start time ({start_dt}) is not before end time ({end_dt})")
+                    continue
+                
+                event['start'] = start_dt
+                event['end'] = end_dt
+                
+                # Preserve all_day flag
+                event['all_day'] = event_data.get('all_day', False)
+                
+                result = create_google_event(service, event, timezone=user_timezone)
+                created_events.append({
+                    'title': event['title'],
+                    'link': result.get('htmlLink')
+                })
+            except Exception as e:
+                print(f"Error creating event '{event_data.get('title', 'Unknown')}': {e}")
+                continue
         
         return jsonify({
             'success': True,
