@@ -130,6 +130,7 @@ Important rules:
 3. For tasks, use the due date as start_text and set end_text to "0"
 4. For recurring events like "Every Monday", create a single entry with pattern in description
 5. Return ONLY valid JSON, no markdown formatting
+6. Minimum event details: event type, name, time, date
 
 Current date context: {current_date}
 
