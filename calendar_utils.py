@@ -53,18 +53,37 @@ def create_google_service(credentials_path: str = "credentials.json", token_path
     return service
 
 
-def create_google_event(service, event: Dict, calendar_id: str = "primary") -> Dict:
+def create_google_event(service, event: Dict, calendar_id: str = "primary", timezone: str = "America/Los_Angeles") -> Dict:
     """Create an event in Google Calendar.
 
     event: dict with keys title, start (datetime), end (datetime), description, location
+    timezone: IANA timezone string (default: America/Los_Angeles)
     Returns the created event resource.
     """
+    # Ensure timezone is included in the datetime ISO string
+    start_dt = event["start"]
+    end_dt = event["end"]
+    
+    # If datetime is naive, assume local timezone
+    if start_dt.tzinfo is None:
+        from datetime import timezone
+        start_dt = start_dt.replace(tzinfo=timezone.utc)
+    if end_dt.tzinfo is None:
+        from datetime import timezone
+        end_dt = end_dt.replace(tzinfo=timezone.utc)
+    
     body = {
         "summary": event.get("title"),
         "description": event.get("description"),
         "location": event.get("location"),
-        "start": {"dateTime": event["start"].isoformat()},
-        "end": {"dateTime": event["end"].isoformat()},
+        "start": {
+            "dateTime": start_dt.isoformat(),
+            "timeZone": timezone
+        },
+        "end": {
+            "dateTime": end_dt.isoformat(),
+            "timeZone": timezone
+        },
     }
     created = service.events().insert(calendarId=calendar_id, body=body).execute()
     return created

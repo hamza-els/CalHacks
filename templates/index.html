@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Syllabus to Calendar Converter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .upload-section {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            transition: all 0.3s;
+        }
+        
+        .upload-section:hover {
+            border-color: #764ba2;
+            background: #f8f9ff;
+        }
+        
+        .upload-section.dragover {
+            border-color: #764ba2;
+            background: #f0f3ff;
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
+        .file-label {
+            display: inline-block;
+            padding: 15px 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+        
+        .file-label:hover {
+            transform: scale(1.05);
+        }
+        
+        .file-name {
+            margin-top: 15px;
+            color: #666;
+            font-size: 0.95em;
+        }
+        
+        .btn {
+            padding: 15px 40px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 10px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(86, 171, 47, 0.4);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .events-section {
+            margin-top: 30px;
+            display: none;
+        }
+        
+        .events-section.show {
+            display: block;
+        }
+        
+        .events-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .events-count {
+            background: #f0f3ff;
+            padding: 10px 20px;
+            border-radius: 50px;
+            color: #667eea;
+            font-weight: 600;
+        }
+        
+        .events-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        
+        .events-table th {
+            background: #f8f9ff;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .events-table td {
+            padding: 15px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .events-table tr:hover {
+            background: #f8f9ff;
+        }
+        
+        .status {
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-weight: 600;
+            margin: 20px 0;
+            display: none;
+        }
+        
+        .status.show {
+            display: block;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .actions {
+            text-align: center;
+            margin-top: 30px;
+        }
+        
+        .google-btn {
+            background: white;
+            border: 2px solid #4285f4;
+            color: #4285f4;
+            padding: 12px 30px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .google-btn:hover {
+            background: #4285f4;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📅 Syllabus to Calendar</h1>
+            <p>Upload your syllabus and automatically create calendar events</p>
+        </div>
+        
+        <div class="content">
+            <div class="upload-section" id="uploadSection">
+                <h2>📤 Upload Your Syllabus</h2>
+                <p style="margin: 20px 0; color: #666;">Supported formats: .txt files</p>
+                <label for="fileInput" class="file-label">
+                    Choose File
+                </label>
+                <input type="file" id="fileInput" accept=".txt">
+                <div class="file-name" id="fileName"></div>
+            </div>
+            
+            <div style="text-align: center;">
+                <button class="btn btn-primary" id="parseBtn" disabled>Parse Events</button>
+            </div>
+            
+            <div class="status" id="status"></div>
+            
+            <div class="events-section" id="eventsSection">
+                <div class="events-header">
+                    <h2>📋 Extracted Events</h2>
+                    <div class="events-count" id="eventsCount"></div>
+                </div>
+                <table class="events-table">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Start</th>
+                            <th>End</th>
+                            <th>Location</th>
+                        </tr>
+                    </thead>
+                    <tbody id="eventsTableBody">
+                    </tbody>
+                </table>
+                
+                <div class="actions">
+                    <a href="/oauth" class="google-btn">🔐 Sign in with Google</a>
+                    <button class="btn btn-success" id="createBtn" disabled>Add to Google Calendar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const fileName = document.getElementById('fileName');
+        const parseBtn = document.getElementById('parseBtn');
+        const createBtn = document.getElementById('createBtn');
+        const status = document.getElementById('status');
+        const eventsSection = document.getElementById('eventsSection');
+        const eventsTableBody = document.getElementById('eventsTableBody');
+        const eventsCount = document.getElementById('eventsCount');
+        const uploadSection = document.getElementById('uploadSection');
+        
+        let selectedFile = null;
+        
+        // File input change
+        fileInput.addEventListener('change', (e) => {
+            selectedFile = e.target.files[0];
+            if (selectedFile) {
+                fileName.textContent = selectedFile.name;
+                parseBtn.disabled = false;
+            }
+        });
+        
+        // Drag and drop
+        uploadSection.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadSection.classList.add('dragover');
+        });
+        
+        uploadSection.addEventListener('dragleave', () => {
+            uploadSection.classList.remove('dragover');
+        });
+        
+        uploadSection.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadSection.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                selectedFile = files[0];
+                fileInput.files = files;
+                fileName.textContent = selectedFile.name;
+                parseBtn.disabled = false;
+            }
+        });
+        
+        // Parse button
+        parseBtn.addEventListener('click', async () => {
+            if (!selectedFile) return;
+            
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            
+            showStatus('Parsing events...', 'info');
+            parseBtn.disabled = true;
+            
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showStatus(`Successfully parsed ${data.count} events!`, 'success');
+                    displayEvents(data.events);
+                    createBtn.disabled = false;
+                } else {
+                    showStatus(`Error: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showStatus(`Error: ${error.message}`, 'error');
+            } finally {
+                parseBtn.disabled = false;
+            }
+        });
+        
+        // Create events button
+        createBtn.addEventListener('click', async () => {
+            showStatus('Creating events in Google Calendar...', 'info');
+            createBtn.disabled = true;
+            
+            try {
+                const response = await fetch('/create-events', {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showStatus(`✅ ${data.message}`, 'success');
+                    let links = '<br>Created events:<br>';
+                    data.events.forEach(e => {
+                        links += `<a href="${e.link}" target="_blank">${e.title}</a><br>`;
+                    });
+                    status.innerHTML = `✅ ${data.message}${links}`;
+                } else {
+                    showStatus(`Error: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showStatus(`Error: ${error.message}`, 'error');
+            } finally {
+                createBtn.disabled = false;
+            }
+        });
+        
+        function displayEvents(events) {
+            eventsCount.textContent = `${events.length} events`;
+            eventsTableBody.innerHTML = '';
+            
+            events.forEach(event => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${event.title}</td>
+                    <td>${formatDate(event.start)}</td>
+                    <td>${formatDate(event.end)}</td>
+                    <td>${event.location || '-'}</td>
+                `;
+                eventsTableBody.appendChild(row);
+            });
+            
+            eventsSection.classList.add('show');
+        }
+        
+        function formatDate(isoString) {
+            const date = new Date(isoString);
+            return date.toLocaleString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit'
+            });
+        }
+        
+        function showStatus(message, type) {
+            status.textContent = message;
+            status.className = `status ${type} show`;
+        }
+    </script>
+</body>
+</html>
+
