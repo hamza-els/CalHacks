@@ -206,9 +206,9 @@ Return JSON array:"""
         
         # Use models that explicitly support vision
         model_names = [
-            'models/gemini-1.5-flash',  # This one definitely supports vision
-            'models/gemini-1.5-pro',    # This one too
-            'models/gemini-2.0-flash-exp',  # Experimental vision support
+            'models/gemini-2.0-flash-exp',  # Primary choice for vision
+            'models/gemini-1.5-flash',  # Fallback
+            'models/gemini-1.5-pro',    # Fallback
         ]
         
         print(f"Preparing image (size: {len(image_data)} bytes)...")
@@ -247,7 +247,7 @@ Return JSON array:"""
                             generation_config=generation_config
                         )
                     
-                    response = timeout_handler(call_api, timeout_seconds=60)
+                    response = timeout_handler(call_api, timeout_seconds=120)
                     print(f"Successfully got response from {model_name}")
                     break
                 except TimeoutError as timeout_err:
