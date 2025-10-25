@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 
 from parsers import extract_events_from_text, extract_events_with_gemini
 from calendar_utils import create_google_service, create_google_event
+from image_processor import extract_events_from_image, get_supported_image_formats
 
 # Load environment variables from .env file
 load_dotenv()
@@ -21,7 +22,7 @@ app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-producti
 
 # Configuration
 UPLOAD_FOLDER = 'uploads'
-ALLOWED_EXTENSIONS = {'txt', 'pdf'}
+ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
@@ -130,38 +131,58 @@ def upload_file():
         return jsonify({'error': 'No file selected'}), 400
     
     if not allowed_file(file.filename):
-        return jsonify({'error': 'File type not allowed. Please upload .txt or .pdf files.'}), 400
+        return jsonify({'error': 'File type not allowed. Please upload .txt, .pdf, or image files.'}), 400
     
     # Save file
     filename = secure_filename(file.filename)
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     file.save(filepath)
+    print(f"File saved: {filename}")
     
-    # Read text content
-    try:
-        if filename.endswith('.txt'):
-            with open(filepath, 'r', encoding='utf-8') as f:
-                text = f.read()
-        elif filename.endswith('.pdf'):
-            # Extract text from PDF using pdfplumber
-            import pdfplumber
-            text = ''
-            with pdfplumber.open(filepath) as pdf:
-                for page in pdf.pages:
-                    text += page.extract_text() + '\n'
-        else:
-            return jsonify({'error': 'Unsupported file type'}), 400
-    except Exception as e:
-        return jsonify({'error': f'Error reading file: {str(e)}'}), 500
+    # Check if it's an image file
+    image_extensions = {'.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp'}
+    file_ext = '.' + filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
+    
+    print(f"File extension: {file_ext}")
     
     # Extract events
     try:
-        # Try Gemini API if available, otherwise fall back to dateparser
         use_gemini = os.environ.get('GEMINI_API_KEY') is not None
-        if use_gemini:
-            events = extract_events_with_gemini(text)
+        
+        if file_ext in image_extensions:
+            # Handle image files with Gemini Vision
+            print(f"Processing image file: {filename}")
+            if not use_gemini:
+                return jsonify({'error': 'GEMINI_API_KEY is required for image processing'}), 400
+            
+            # Process image file using Gemini Vision (extracts events directly)
+            events = extract_events_from_image(filepath)
+            print(f"Successfully extracted {len(events)} events from image")
         else:
-            events = extract_events_from_text(text)
+            # Read text content from text or PDF files
+            try:
+                if filename.endswith('.txt'):
+                    with open(filepath, 'r', encoding='utf-8') as f:
+                        text = f.read()
+                elif filename.endswith('.pdf'):
+                    # Extract text from PDF using pdfplumber
+                    import pdfplumber
+                    text = ''
+                    with pdfplumber.open(filepath) as pdf:
+                        for page in pdf.pages:
+                            text += page.extract_text() + '\n'
+                else:
+                    return jsonify({'error': 'Unsupported file type'}), 400
+            except Exception as e:
+                return jsonify({'error': f'Error reading file: {str(e)}'}), 500
+            
+            # Extract events from text
+            if use_gemini:
+                events = extract_events_with_gemini(text)
+            else:
+                events = extract_events_from_text(text)
+        
+        print(f"Serializing {len(events)} events...")
         
         # Convert datetime objects to ISO strings for JSON serialization
         events_serialized = []
@@ -177,8 +198,12 @@ def upload_file():
                 'recurring': event.get('recurring', False)
             })
         
+        print(f"Events serialized, storing in session...")
+        
         # Store events in session for later use
         session['events'] = events_serialized
+        
+        print("Response ready to send")
         
         return jsonify({
             'success': True,
