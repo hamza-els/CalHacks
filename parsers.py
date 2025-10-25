@@ -105,7 +105,12 @@ def extract_events_with_gemini(text: str, base_date: Optional[str] = None) -> Li
         current_date = datetime.now().isoformat() if not base_date else base_date
         prompt = f"""You are an expert at extracting calendar events from academic syllabi and course schedules.
 
-Extract all events, deadlines, exams, lectures, and important dates from the following text.
+Extract all events, deadlines, exams, lectures, and important dates from the following text. The same event can be referenced in various parts of the text, each with some context. Make sure to group these events if you are sure they are the same
+
+STEPS
+- SCAN: Initially go through the text and note important names that refer to events
+- COLLECT: Collect info about events, grouping them by their names (make sure to distinguish seperate midterms)
+- OUPUT: Output the events with enough info about them to be able to create a simple google calendar event
 
 CLASSIFY each item as either an "event" or "task":
 - EVENTS: Have specific start and end times (lectures, labs, discussions, exams, meetings, office hours)
