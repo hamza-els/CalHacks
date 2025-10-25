@@ -21,7 +21,12 @@ except Exception:
 from icalendar import Calendar, Event
 
 # If modifying these scopes, delete the file token.json.
-SCOPES = ["https://www.googleapis.com/auth/calendar.events"]
+SCOPES = [
+    "openid",
+    "https://www.googleapis.com/auth/calendar.events",
+    "https://www.googleapis.com/auth/userinfo.email",
+    "https://www.googleapis.com/auth/userinfo.profile"
+]
 
 
 def create_google_service(credentials_path: str = "credentials.json", token_path: str = "token.json"):
@@ -36,18 +41,20 @@ def create_google_service(credentials_path: str = "credentials.json", token_path
     creds = None
     if os.path.exists(token_path):
         creds = Credentials.from_authorized_user_file(token_path, SCOPES)
+    
     # If there are no (valid) credentials, let the user log in.
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
+            # Refresh the token
+            try:
+                creds.refresh(Request())
+            except Exception as e:
+                print(f"Could not refresh token: {e}")
+                # If refresh fails, raise an error - user needs to re-authenticate
+                raise Exception("Authentication expired. Please sign in again.")
         else:
-            if not os.path.exists(credentials_path):
-                raise FileNotFoundError(f"{credentials_path} not found. Create OAuth credentials in Google Cloud Console and save as {credentials_path}.")
-            flow = InstalledAppFlow.from_client_secrets_file(credentials_path, SCOPES)
-            creds = flow.run_local_server(port=0)
-        # Save the credentials for the next run
-        with open(token_path, "w") as token:
-            token.write(creds.to_json())
+            # No valid credentials - user needs to authenticate via web OAuth
+            raise Exception("Not authenticated. Please sign in with Google first.")
 
     service = build("calendar", "v3", credentials=creds)
     return service
@@ -66,11 +73,11 @@ def create_google_event(service, event: Dict, calendar_id: str = "primary", time
     
     # If datetime is naive, assume local timezone
     if start_dt.tzinfo is None:
-        from datetime import timezone
-        start_dt = start_dt.replace(tzinfo=timezone.utc)
+        from datetime import timezone as tz
+        start_dt = start_dt.replace(tzinfo=tz.utc)
     if end_dt.tzinfo is None:
-        from datetime import timezone
-        end_dt = end_dt.replace(tzinfo=timezone.utc)
+        from datetime import timezone as tz
+        end_dt = end_dt.replace(tzinfo=tz.utc)
     
     body = {
         "summary": event.get("title"),

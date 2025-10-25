@@ -328,6 +328,9 @@ def create_events():
             'events': created_events
         })
     except Exception as e:
+        import traceback
+        print(f"Error creating events: {e}")
+        print(traceback.format_exc())
         return jsonify({'error': f'Error creating events: {str(e)}'}), 500
 
 
