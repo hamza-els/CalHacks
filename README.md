@@ -55,7 +55,7 @@ Google client: google-api-python-client
 
 Date parsing: dateparser, quickadd or Duckling (via wrapper) for robust parsing. 
 GitHub
-+1
++1 
 
 LLM: OpenAI Python SDK (function-calling / structured outputs)
 
