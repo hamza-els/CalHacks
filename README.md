@@ -5,6 +5,7 @@ A web application that extracts events and tasks from academic syllabi and autom
 ## Features
 
 - 🤖 **AI-Powered Parsing**: Uses Google Gemini AI to intelligently extract events from syllabi
+- 📄 **PDF Support**: Upload syllabi as .txt or .pdf files
 - 📝 **Smart Categorization**: Distinguishes between events (lectures, labs, exams) and tasks (assignments, projects)
 - 🌍 **Timezone Support**: Automatically detects and uses your local timezone
 - 📅 **Google Calendar Integration**: Direct integration with Google Calendar
@@ -97,7 +98,7 @@ Open your browser and navigate to: **http://localhost:5000**
 ## Usage
 
 1. **Sign in with Google**: Click "Sign in with Google" in the header
-2. **Upload Syllabus**: Click "Choose File" and select your syllabus (.txt format)
+2. **Upload Syllabus**: Click "Choose File" and select your syllabus (.txt or .pdf format)
 3. **Parse Events**: Click "Parse Events" to extract events and tasks
 4. **Review**: Check the extracted events (indicated as 📅 Event or 📝 Task)
 5. **Create Calendar**: Click "Add to Google Calendar" to create events

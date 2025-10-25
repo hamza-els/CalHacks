@@ -321,14 +321,24 @@ def create_events():
         return jsonify({'error': 'Not authenticated. Please sign in with Google first.'}), 401
     
     try:
-        # Get timezone from request or use default
-        user_timezone = request.json.get('timezone', 'America/Los_Angeles') if request.is_json else 'America/Los_Angeles'
+        # Get timezone and event indices from request
+        if request.is_json:
+            user_timezone = request.json.get('timezone', 'America/Los_Angeles')
+            event_indices = request.json.get('event_indices', None)
+        else:
+            user_timezone = 'America/Los_Angeles'
+            event_indices = None
         
         service = create_google_service()
         events = session['events']
         created_events = []
         
-        for event_data in events:
+        # Filter events based on checked indices
+        events_to_create = events
+        if event_indices is not None:
+            events_to_create = [events[i] for i in event_indices if 0 <= i < len(events)]
+        
+        for event_data in events_to_create:
             # Create a copy of the event to avoid modifying session data
             event = event_data.copy()
             
