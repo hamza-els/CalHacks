@@ -354,7 +354,7 @@ def create_events():
                 # Preserve all_day flag
                 event['all_day'] = event_data.get('all_day', False)
 
-                 event['recurring'] = event_data.get('recurring', False)
+                event['recurring'] = event_data.get('recurring', False)
                 
                 result = create_google_event(service, event, timezone=user_timezone)
                 created_events.append({
