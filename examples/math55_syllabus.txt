@@ -1,0 +1,80 @@
+me!
+This course serves two purposes.  One is to learn the basics of elementary number theory, probability, and combinatorics.  These subjects involve discrete concepts like integers, counting, and diagrams, as opposed to continuous concepts like functions of real numbers.
+
+The second purpose of this course is to learn the techniques of logical reasoning and proof, which provide the basis for mathematical knowledge.  The art of mathematical reasoning is quite different from more familiar kinds of problem solving in elementary and high school math and even calculus.  Coming to grips with mathematical reasoning for the first time is a challenge!  A main idea of this course is that the challenge should be easier to meet while working with friendly discrete math concepts than with more difficult abstractions in algebra or analysis.  I also hope you will find that coming to understand mathematical reasoning helps to reveal some of the beauty and room for creativity in math.
+
+Please read the information below carefully for details about the class, textbook, homework, exams, and grading.
+
+Professor
+Prof. Mark Haiman, mhaiman@math.berkeley.edu, web page https://math.berkeley.edu/~mhaiman/
+
+Office hours: MW 11am-12:30pm, 855 Evans.  For office hours, your primary resource should be the GSIs, since there are over 400 students in the class and my office is only big enough for about six students.  See me mainly for questions that the GSIs are unable to answer.
+
+GSIs
+List of GSIs and their office hours.
+
+Class meeting times
+Lectures MWF 2:10-3, Room 155 Dwinelle.  Discussion sections Mondays and Wednesdays.
+
+Lecture recordings will be available in the bCourses Media Gallery a short time after each lecture.  I strongly recommend that you attend the lectures in person, and just use the recordings for review or to go over anything that you missed.
+
+Textbook
+Kenneth Rosen, Discrete Mathematics and Its Applications, 8th Edition (McGraw HillLinks to an external site., ISBN 9781259676512),  or the UC Berkeley custom paperback edition, which includes the chapters that we use in Math 55.
+
+You can buy or rent the book from the publisher, or find a used copy (try Google searching the ISBN number).
+
+We will complement the textbook with some supplementary notes.
+
+Reading and lectures
+Schedule of lecture topics and reading assignments
+
+Slides from lectures (unless I switch to the blackboard after the stuck screen is fixed!)
+
+Homework
+Weekly assignments, posted via links in the Course Summary at the bottom of this page.  To be submitted on Gradescope using the mobile appLinks to an external site. or by uploading a PDF scanLinks to an external site..  Due Wednesdays at 8pm.  Accepted late until 11:59pm, with a score penalty based on the time elapsed beyond 8pm.
+
+You can also find homework sets and solutions (posted later) in this folder.
+
+Your score on each homework set will primarily be based on one problem (not announced in advance!) that we select for careful grading.  For the rest of the problems we will just do a quick count of solutions submitted that appear to be correct or show significant effort.
+
+After homework is returned, one student in each discussion section will be called upon to explain their answer in class for that week's selected problem.  The GSIs will look for especially good answers, so consider it an honor to be called on!
+
+Your GSI may sometimes also ask you to see them outside of class to explain a homework answer, to check your understanding, or if they are not sure what you mean by something you write.
+
+Policy on receiving assistance with homework
+
+Allowed: working out ideas by brainstorming with fellow students, getting help from your GSI, and making use of SLC or other tutoring, provided that you write answers yourself based on what you understand.
+Not allowed: reproducing answers (either verbatim or with modifications) produced by another person or any automated system.
+Copying or modifying an AI-generated homework answer is specifically not allowed, as above.  However, I also strongly discourage using AI for brainstorming or tutoring purposes which would otherwise be allowed.  AI systems are designed to generate plausible-looking (though often incorrect) mathematical arguments, but they will not help you gain insight or conceptual understanding, and can actually work against this by causing you to think you understand something that you haven't worked out for yourself.
+
+Exams
+Two midterm exams during the lecture hour and a final exam.  See exam info page for dates and locations, ground rules, topics covered, older exams for review, and posted solutions.  There are no make-up exams, alternative exam dates, or remote exams.  Do not take this class if you would have an unavoidable conflict with exam dates.
+
+To see your graded exams and scores, and request regrades in case of grading errors, use the Gradescope tab in the bCourses menu.
+
+Grading policy
+Final Exam 40%, Midterm exams 20% each, Homework 20%.  A higher final exam grade overrides one missing or lower midterm grade.  See detailed grading policy for more information.
+
+Other resources
+The Student Learning Center offers drop-in tutoring for Math 55, starting the second week of classes.
+
+Course Summary:
+Course Summary
+Date	Details	Due
+Wed Sep 3, 2025	Assignment Homework 1	due by 8pm
+Wed Sep 10, 2025	Assignment Homework 2	due by 8pm
+Wed Sep 17, 2025	Assignment Homework 3	due by 8pm
+Wed Sep 24, 2025	Assignment Homework 4	due by 8pm
+Sat Sep 27, 2025	Assignment Academic Integrity Assignment (Fall 2025)	due by 12:59am
+Wed Oct 1, 2025	Assignment Homework 5	due by 8pm
+Fri Oct 3, 2025	Assignment Midterm 1	due by 2:10pm
+Wed Oct 8, 2025	Assignment Homework 6	due by 8pm
+Wed Oct 15, 2025	Assignment Homework 7	due by 8pm
+Wed Oct 22, 2025	Assignment Homework 8	due by 8pm
+Wed Oct 29, 2025	Assignment Homework 9	due by 8pm
+Wed Nov 5, 2025	Assignment Homework 10	due by 8pm
+Fri Nov 7, 2025	Assignment Midterm 2	due by 2:10pm
+Wed Nov 12, 2025	Assignment Homework 11	due by 8pm
+Wed Nov 19, 2025	Assignment Homework 12	due by 8pm
+Wed Dec 3, 2025	Assignment Homework 13	due by 8pm
+Thu Dec 18, 2025	Assignment Final Exam	due by 3pm

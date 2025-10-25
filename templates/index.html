@@ -1030,7 +1030,7 @@
                 }
                 
                 // Check score
-                if (!pipe.passed && pipe.x + pipe.width < gameState.bird.x) {
+                if (!pipe.passed && pipe.x < gameState.bird.x) {
                     pipe.passed = true;
                     gameState.score++;
                     // Play pipe passed sound
@@ -1117,6 +1117,9 @@
             
             // Normal jump
             gameState.bird.velocity = gameState.bird.jump;
+            // Play jump sound
+            gameSounds.jump.currentTime = 0; // Reset to beginning
+            gameSounds.jump.play().catch(e => console.log('Sound play failed:', e));
         }
         
         function showGame() {
@@ -1139,7 +1142,8 @@
         
         // Sound system
         const gameSounds = {
-            pipePassed: new Audio('/assets/8-bit-powerup-6768.mp3')
+            pipePassed: new Audio('/assets/8-bit-powerup-6768.mp3'),
+            jump: new Audio('/assets/075176_duck-quack-40345-[AudioTrimmer.com].mp3')
         };
         
         // Preload sounds
