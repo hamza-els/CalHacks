@@ -143,29 +143,12 @@ def upload_file():
             with open(filepath, 'r', encoding='utf-8') as f:
                 text = f.read()
         elif filename.endswith('.pdf'):
-            # Extract text from PDF
-            from pypdf import PdfReader
-            from pypdf.errors import PdfReadError
-            
-            try:
-                reader = PdfReader(filepath)
-                
-                # Check if PDF is encrypted
-                if reader.is_encrypted:
-                    return jsonify({'error': 'PDF is password-protected. Please remove the password and try again.'}), 400
-                
-                text = ""
-                for page in reader.pages:
-                    text += page.extract_text() + "\n"
-                
-                if not text.strip():
-                    return jsonify({'error': 'Could not extract text from PDF. The PDF might be image-based (scanned) or contain no readable text.'}), 400
-            except PdfReadError as e:
-                error_msg = str(e)
-                if 'invalid pdf header' in error_msg.lower():
-                    return jsonify({'error': 'Invalid PDF file. The file may be corrupted or not a valid PDF. Please check the file and try again.'}), 400
-                else:
-                    return jsonify({'error': f'Error reading PDF: {error_msg}'}), 400
+            # Extract text from PDF using pdfplumber
+            import pdfplumber
+            text = ''
+            with pdfplumber.open(filepath) as pdf:
+                for page in pdf.pages:
+                    text += page.extract_text() + '\n'
         else:
             return jsonify({'error': 'Unsupported file type'}), 400
     except Exception as e:
