@@ -45,16 +45,21 @@
         }
         
         .content {
-            padding: 40px;
+            padding: 30px;
         }
         
         .upload-section {
             border: 3px dashed #667eea;
             border-radius: 15px;
-            padding: 40px;
+            padding: 20px;
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
             transition: all 0.3s;
+        }
+        
+        .upload-section h2 {
+            font-size: 1.3em;
+            margin-bottom: 10px;
         }
         
         .upload-section:hover {
@@ -73,12 +78,12 @@
         
         .file-label {
             display: inline-block;
-            padding: 15px 40px;
+            padding: 12px 30px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border-radius: 50px;
             cursor: pointer;
-            font-size: 1.1em;
+            font-size: 1em;
             font-weight: 600;
             transition: transform 0.2s;
         }
@@ -88,9 +93,9 @@
         }
         
         .file-name {
-            margin-top: 15px;
+            margin-top: 10px;
             color: #666;
-            font-size: 0.95em;
+            font-size: 0.85em;
         }
         
         .btn {
@@ -144,6 +149,14 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 10px;
+            transition: background 0.2s;
+        }
+        
+        .events-header:hover {
+            background: #f8f9ff;
         }
         
         .events-count {
@@ -152,6 +165,30 @@
             border-radius: 50px;
             color: #667eea;
             font-weight: 600;
+        }
+        
+        .collapse-toggle {
+            font-size: 1.2em;
+            transition: transform 0.3s;
+            display: inline-block;
+        }
+        
+        .events-header.collapsed .collapse-toggle {
+            transform: rotate(0deg);
+        }
+        
+        .events-header:not(.collapsed) .collapse-toggle {
+            transform: rotate(90deg);
+        }
+        
+        .events-content {
+            transition: max-height 0.3s ease-out;
+            overflow: hidden;
+            max-height: 0;
+        }
+        
+        .events-content.expanded {
+            max-height: 5000px;
         }
         
         .events-table {
@@ -228,6 +265,22 @@
             background: #4285f4;
             color: white;
         }
+        
+        /* Checkbox styling */
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: #667eea;
+        }
+        
+        #selectAll {
+            margin-right: 5px;
+        }
+        
+        .event-checkbox {
+            vertical-align: middle;
+        }
     </style>
 </head>
 <body>
@@ -250,11 +303,11 @@
         <div class="content">
             <div class="upload-section" id="uploadSection">
                 <h2>📤 Upload Your Syllabus</h2>
-                <p style="margin: 20px 0; color: #666;">Supported formats: .txt files</p>
+                <p style="margin: 10px 0; color: #666; font-size: 0.9em;">Supported formats: .txt and .pdf files</p>
                 <label for="fileInput" class="file-label">
                     Choose File
                 </label>
-                <input type="file" id="fileInput" accept=".txt">
+                <input type="file" id="fileInput" accept=".txt,.pdf">
                 <div class="file-name" id="fileName"></div>
             </div>
             
@@ -265,26 +318,29 @@
             <div class="status" id="status"></div>
             
             <div class="events-section" id="eventsSection">
-                <div class="events-header">
-                    <h2>📋 Extracted Events</h2>
+                <div class="events-header collapsed" id="eventsHeader">
+                    <h2>📋 Extracted Events <span class="collapse-toggle">▶</span></h2>
                     <div class="events-count" id="eventsCount"></div>
                 </div>
-                <table class="events-table">
-                    <thead>
-                        <tr>
-                            <th>Type</th>
-                            <th>Title</th>
-                            <th>Start</th>
-                            <th>End</th>
-                            <th>Location</th>
-                        </tr>
-                    </thead>
-                    <tbody id="eventsTableBody">
-                    </tbody>
-                </table>
-                
-                <div class="actions">
-                    <button class="btn btn-success" id="createBtn" disabled>Add to Google Calendar</button>
+                <div class="events-content" id="eventsContent">
+                    <table class="events-table">
+                        <thead>
+                            <tr>
+                                <th><input type="checkbox" id="selectAll"> Include</th>
+                                <th>Type</th>
+                                <th>Title</th>
+                                <th>Start</th>
+                                <th>End</th>
+                                <th>Location</th>
+                            </tr>
+                        </thead>
+                        <tbody id="eventsTableBody">
+                        </tbody>
+                    </table>
+                    
+                    <div class="actions">
+                        <button class="btn btn-success" id="createBtn" disabled>Add to Google Calendar</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -306,9 +362,20 @@
         const userPicture = document.getElementById('userPicture');
         const signOutBtn = document.getElementById('signOutBtn');
         const signInBtn = document.getElementById('signInBtn');
+        const eventsHeader = document.getElementById('eventsHeader');
+        const eventsContent = document.getElementById('eventsContent');
         
         let selectedFile = null;
         let isAuthenticated = false;
+        let allEvents = []; // Store all parsed events
+        
+        // Collapse functionality
+        if (eventsHeader) {
+            eventsHeader.addEventListener('click', function() {
+                eventsHeader.classList.toggle('collapsed');
+                eventsContent.classList.toggle('expanded');
+            });
+        }
         
         // Check authentication status on page load
         async function checkAuthStatus() {
@@ -434,7 +501,21 @@
         
         // Create events button
         createBtn.addEventListener('click', async () => {
-            showStatus('Creating events in Google Calendar...', 'info');
+            // Get checked events
+            const checkboxes = document.querySelectorAll('.event-checkbox');
+            const checkedIndices = [];
+            checkboxes.forEach((cb, index) => {
+                if (cb.checked) {
+                    checkedIndices.push(index);
+                }
+            });
+            
+            if (checkedIndices.length === 0) {
+                showStatus('⚠️ Please select at least one event to add', 'error');
+                return;
+            }
+            
+            showStatus(`Creating ${checkedIndices.length} events in Google Calendar...`, 'info');
             createBtn.disabled = true;
             
             // Get user's timezone
@@ -447,7 +528,8 @@
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        timezone: userTimezone
+                        timezone: userTimezone,
+                        event_indices: checkedIndices
                     })
                 });
                 
@@ -471,16 +553,18 @@
         });
         
         function displayEvents(events) {
+            allEvents = events; // Store events globally
             eventsCount.textContent = `${events.length} events`;
             eventsTableBody.innerHTML = '';
             
-            events.forEach(event => {
+            events.forEach((event, index) => {
                 const row = document.createElement('tr');
                 const eventType = event.type || 'event';
                 const typeBadge = eventType === 'task' ? '📝 Task' : '📅 Event';
                 const isAllDay = event.all_day || eventType === 'task';
                 
                 row.innerHTML = `
+                    <td><input type="checkbox" class="event-checkbox" data-index="${index}"></td>
                     <td>${typeBadge}</td>
                     <td>${event.title}</td>
                     <td>${formatDate(event.start, isAllDay)}</td>
@@ -490,7 +574,19 @@
                 eventsTableBody.appendChild(row);
             });
             
+            // Add "Select All" functionality
+            const selectAllCheckbox = document.getElementById('selectAll');
+            if (selectAllCheckbox) {
+                selectAllCheckbox.addEventListener('change', function() {
+                    const checkboxes = document.querySelectorAll('.event-checkbox');
+                    checkboxes.forEach(cb => cb.checked = this.checked);
+                });
+            }
+            
             eventsSection.classList.add('show');
+            // Expand the events content when displaying
+            eventsHeader.classList.remove('collapsed');
+            eventsContent.classList.add('expanded');
         }
         
         function formatDate(isoString, isAllDay = false) {

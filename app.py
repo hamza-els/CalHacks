@@ -143,8 +143,29 @@ def upload_file():
             with open(filepath, 'r', encoding='utf-8') as f:
                 text = f.read()
         elif filename.endswith('.pdf'):
-            # For now, just read as text. Install pdf-parse for proper PDF support
-            return jsonify({'error': 'PDF support coming soon. Please use .txt files for now.'}), 400
+            # Extract text from PDF
+            from pypdf import PdfReader
+            from pypdf.errors import PdfReadError
+            
+            try:
+                reader = PdfReader(filepath)
+                
+                # Check if PDF is encrypted
+                if reader.is_encrypted:
+                    return jsonify({'error': 'PDF is password-protected. Please remove the password and try again.'}), 400
+                
+                text = ""
+                for page in reader.pages:
+                    text += page.extract_text() + "\n"
+                
+                if not text.strip():
+                    return jsonify({'error': 'Could not extract text from PDF. The PDF might be image-based (scanned) or contain no readable text.'}), 400
+            except PdfReadError as e:
+                error_msg = str(e)
+                if 'invalid pdf header' in error_msg.lower():
+                    return jsonify({'error': 'Invalid PDF file. The file may be corrupted or not a valid PDF. Please check the file and try again.'}), 400
+                else:
+                    return jsonify({'error': f'Error reading PDF: {error_msg}'}), 400
         else:
             return jsonify({'error': 'Unsupported file type'}), 400
     except Exception as e:
@@ -317,14 +338,24 @@ def create_events():
         return jsonify({'error': 'Not authenticated. Please sign in with Google first.'}), 401
     
     try:
-        # Get timezone from request or use default
-        user_timezone = request.json.get('timezone', 'America/Los_Angeles') if request.is_json else 'America/Los_Angeles'
+        # Get timezone and event indices from request
+        if request.is_json:
+            user_timezone = request.json.get('timezone', 'America/Los_Angeles')
+            event_indices = request.json.get('event_indices', None)
+        else:
+            user_timezone = 'America/Los_Angeles'
+            event_indices = None
         
         service = create_google_service()
         events = session['events']
         created_events = []
         
-        for event_data in events:
+        # Filter events based on checked indices
+        events_to_create = events
+        if event_indices is not None:
+            events_to_create = [events[i] for i in event_indices if 0 <= i < len(events)]
+        
+        for event_data in events_to_create:
             # Create a copy of the event to avoid modifying session data
             event = event_data.copy()
             
