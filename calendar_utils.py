@@ -63,12 +63,13 @@ def create_google_service(credentials_path: str = "credentials.json", token_path
 def create_google_event(service, event: Dict, calendar_id: str = "primary", timezone: str = "America/Los_Angeles") -> Dict:
     """Create an event in Google Calendar.
 
-    event: dict with keys title, start (datetime), end (datetime), description, location, all_day (bool)
+    event: dict with keys title, start (datetime), end (datetime), description, location, all_day (bool), recurring (bool)
     timezone: IANA timezone string (default: America/Los_Angeles)
     Returns the created event resource.
     """
     # Check if this is an all-day event
     is_all_day = event.get("all_day", False)
+    is_recurring = event.get("recurring", False)
     
     # Ensure timezone is included in the datetime ISO string
     start_dt = event["start"]
@@ -117,6 +118,69 @@ def create_google_event(service, event: Dict, calendar_id: str = "primary", time
                 "timeZone": timezone
             },
         }
+    
+    # Add recurrence rule if this is a recurring event (events or tasks)
+    if is_recurring:
+        from datetime import timedelta
+        
+        # Try to get the days of week from the event description or location
+        # Common patterns: "MWF" (Monday, Wednesday, Friday), "TTH" (Tuesday, Thursday), etc.
+        days_str = event.get("description", "").upper()
+        
+        # Map day abbreviations to Google Calendar format
+        day_patterns = {
+            'M': 'MO', 'MON': 'MO', 'MONDAY': 'MO',
+            'T': 'TU', 'TUE': 'TU', 'TUES': 'TU', 'TUESDAY': 'TU',
+            'W': 'WE', 'WED': 'WE', 'WEDNESDAY': 'WE',
+            'R': 'TH', 'TH': 'TH', 'THUR': 'TH', 'THURS': 'TH', 'THURSDAY': 'TH',
+            'F': 'FR', 'FRI': 'FR', 'FRIDAY': 'FR',
+            'SA': 'SA', 'SAT': 'SA', 'SATURDAY': 'SA',
+            'SU': 'SU', 'SUN': 'SU', 'SUNDAY': 'SU'
+        }
+        
+        # Try to find day patterns in the description
+        # Look for patterns like "MWF", "TTH", "M W F", "Mon Wed Fri", etc.
+        found_days = []
+        
+        # First, check for abbreviated patterns like "MWF", "TTH"
+        if len(days_str) <= 5 and all(c in 'MTWRF' for c in days_str):
+            # Pattern like "MWF" or "TTH"
+            for char in days_str:
+                if char in day_patterns:
+                    day_code = day_patterns[char]
+                    if day_code not in found_days:
+                        found_days.append(day_code)
+        
+        # Check for word patterns in description
+        if not found_days:
+            import re
+            # Look for day names in the description
+            for pattern, day_code in day_patterns.items():
+                if len(pattern) > 2 and pattern in days_str:
+                    if day_code not in found_days:
+                        found_days.append(day_code)
+        
+        # Fallback: use the start date's day if no pattern found
+        if not found_days:
+            weekday = start_dt.weekday()
+            days_map = ["MO", "TU", "WE", "TH", "FR", "SA", "SU"]
+            found_days = [days_map[weekday]]
+        
+        # Create recurrence rule with BYDAY parameter
+        byday_str = ','.join(found_days)
+        end_date = start_dt + timedelta(weeks=16)
+        
+        # For all-day events (tasks), use date format in UNTIL
+        if is_all_day:
+            until_date = end_date.strftime('%Y%m%d')
+            body["recurrence"] = [
+                f"RRULE:FREQ=WEEKLY;BYDAY={byday_str};UNTIL={until_date}"
+            ]
+        else:
+            until_datetime = end_date.strftime('%Y%m%dT%H%M%SZ')
+            body["recurrence"] = [
+                f"RRULE:FREQ=WEEKLY;BYDAY={byday_str};UNTIL={until_datetime}"
+            ]
     
     created = service.events().insert(calendarId=calendar_id, body=body).execute()
     return created

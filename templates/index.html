@@ -417,6 +417,7 @@
                                 <th>Start</th>
                                 <th>End</th>
                                 <th>Location</th>
+                                <th>Recurring</th>
                             </tr>
                         </thead>
                         <tbody id="eventsTableBody">
@@ -668,6 +669,7 @@
                 const typeBadge = eventType === 'task' ? '📝 Task' : '📅 Event';
                 const isAllDay = event.all_day || eventType === 'task';
                 
+                const recurringBadge = event.recurring ? '♻️ Recurring' : '-';
                 row.innerHTML = `
                     <td><input type="checkbox" class="event-checkbox" data-index="${index}"></td>
                     <td>${typeBadge}</td>
@@ -675,6 +677,7 @@
                     <td>${formatDate(event.start, isAllDay)}</td>
                     <td>${isAllDay ? '-' : formatDate(event.end, false)}</td>
                     <td>${event.location || '-'}</td>
+                    <td>${recurringBadge}</td>
                 `;
                 eventsTableBody.appendChild(row);
             });

@@ -108,8 +108,9 @@ def extract_events_with_gemini(text: str, base_date: Optional[str] = None) -> Li
 Extract all events, deadlines, exams, lectures, and important dates from the following text. The same event can be referenced in various parts of the text, each with some context. Make sure to group these events if you are sure they are the same
 
 STEPS
-- SCAN: Initially go through the text and note important names that refer to events
+- SCAN: Initially go through the text and note important names that refer to events or tasks, make sure to get anything accademically related
 - COLLECT: Collect info about events, grouping them by their names (make sure to distinguish seperate midterms)
+- COLLECT A SECOND TIME QUICKLY: make sure to not make duplicates
 - OUPUT: Output the events with enough info about them to be able to create a simple google calendar event
 
 CLASSIFY each item as either an "event" or "task":
@@ -122,15 +123,16 @@ Return a JSON array. Each item should have:
 - start_text: The exact start date/time mentioned (keep original format) OR due date for tasks
 - end_text: The exact end date/time mentioned, or "1 hour" for events, "0" for tasks
 - location: Building name, room number, or "Online" if mentioned (usually empty for tasks)
-- description: Category (e.g., "Lecture", "Lab", "Exam", "Discussion", "Assignment", "Project") - be concise
+- description: For recurring events/tasks, include days of week (e.g., "Lecture MWF", "Lab TTH", "Assignment Monday"). For non-recurring: Category like "Lecture", "Lab", "Exam", "Discussion", "Assignment", "Project"
+- recurring: Boolean indicating if this event/task recurs (e.g., weekly lectures, weekly assignments, recurring meetings). Events/tasks for which there is not specified date but there is a day of the week (or multiple ex: M W (Every Monday and Wednesday)) are likely to be recurring
 
 Important rules:
 1. Use the text's actual date formats (don't convert to ISO unless necessary)
 2. For events without time, assume reasonable defaults (10am for classes, 3pm for exams)
 3. For tasks, use the due date as start_text and set end_text to "0"
-4. For recurring events like "Every Monday", create a single entry with pattern in description
+4. For recurring events or tasks, include days in description (e.g., "MWF", "TTH", "Monday Wednesday Friday", "Assignment Monday") so the recurrence pattern can be determined
 5. Return ONLY valid JSON, no markdown formatting
-6. Minimum event details: event type, name, time, date
+6. Minimum event/task details: name, time, date
 
 Current date context: {current_date}
 
@@ -210,6 +212,9 @@ Return JSON array:"""
                         if not end_dt:
                             end_dt = start_dt + timedelta(hours=1)
                 
+                # Get recurring flag (can be True for both events and tasks)
+                recurring = event_raw.get('recurring', False)
+                
                 event = {
                     "title": event_raw.get('title', 'Event'),
                     "start": start_dt,
@@ -217,7 +222,8 @@ Return JSON array:"""
                     "description": event_raw.get('description', ''),
                     "location": event_raw.get('location'),
                     "type": event_type,
-                    "all_day": (event_type == 'task' or end_dt == start_dt)
+                    "all_day": (event_type == 'task' or end_dt == start_dt),
+                    "recurring": recurring
                 }
                 events.append(event)
             except Exception as e:

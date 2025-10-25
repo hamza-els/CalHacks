@@ -173,7 +173,8 @@ def upload_file():
                 'description': event.get('description', ''),
                 'location': event.get('location', ''),
                 'type': event.get('type', 'event'),
-                'all_day': event.get('all_day', False)
+                'all_day': event.get('all_day', False),
+                'recurring': event.get('recurring', False)
             })
         
         # Store events in session for later use
@@ -348,6 +349,9 @@ def create_events():
             
             # Preserve all_day flag
             event['all_day'] = event_data.get('all_day', False)
+            
+            # Preserve recurring flag
+            event['recurring'] = event_data.get('recurring', False)
             
             result = create_google_event(service, event, timezone=user_timezone)
             created_events.append({
