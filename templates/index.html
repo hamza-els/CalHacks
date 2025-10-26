@@ -534,6 +534,71 @@
             font-size: 0.9em;
             margin-top: 10px;
         }
+
+        .parsing-progress {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 300px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            display: none;
+            text-align: center;
+            z-index: 1100;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: #f0f0f0;
+            border-radius: 3px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0;
+            background: #1A91F0;
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        .completion-animation {
+            display: none;
+            margin-top: 10px;
+        }
+
+        .completion-animation svg {
+            width: 40px;
+            height: 40px;
+        }
+
+        .check-circle {
+            stroke-dasharray: 166;
+            stroke-dashoffset: 166;
+            stroke-width: 2;
+            stroke-miterlimit: 10;
+            stroke: #2ECC71;
+            fill: none;
+            animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+        }
+
+        .check {
+            transform-origin: 50% 50%;
+            stroke-dasharray: 48;
+            stroke-dashoffset: 48;
+            stroke: #2ECC71;
+            animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+        }
+
+        @keyframes stroke {
+            100% {
+                stroke-dashoffset: 0;
+            }
+        }
     </style>
 </head>
 <body>
@@ -631,6 +696,21 @@
             </div>
             <div class="game-score"><span id="gameScore">Time: 0</span></div>
             <canvas id="gameCanvas" width="400" height="600"></canvas>
+        </div>
+    </div>
+
+    <!-- Parsing Progress Bar -->
+    <div class="parsing-progress" id="parsingProgress">
+        <div class="progress-text">Parsing your syllabus...</div>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="completion-animation" id="completionAnim">
+            <svg viewBox="0 0 52 52">
+                <circle class="check-circle" cx="26" cy="26" r="25" />
+                <path class="check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+            </svg>
+            <div style="margin-top: 10px; color: #2ECC71;">Parsing Complete!</div>
         </div>
     </div>
     
@@ -755,6 +835,48 @@
             }
         });
         
+        // Progress bar functions
+        function showParsingProgress() {
+            const progressBar = document.getElementById('parsingProgress');
+            const progressFill = document.getElementById('progressFill');
+            const completionAnim = document.getElementById('completionAnim');
+            
+            progressBar.style.display = 'block';
+            progressFill.style.width = '0%';
+            completionAnim.style.display = 'none';
+        }
+
+        function updateProgress(percent) {
+            const progressFill = document.getElementById('progressFill');
+            progressFill.style.width = `${percent}%`;
+        }
+
+        function showCompletion() {
+            const progressBar = document.getElementById('parsingProgress');
+            const progressText = progressBar.querySelector('.progress-text');
+            const progressBarElement = progressBar.querySelector('.progress-bar');
+            const completionAnim = document.getElementById('completionAnim');
+
+            progressText.style.display = 'none';
+            progressBarElement.style.display = 'none';
+            completionAnim.style.display = 'block';
+
+            // Hide the completion animation after 3 seconds
+            setTimeout(() => {
+                progressBar.style.display = 'none';
+                // Reset for next time
+                progressText.style.display = 'block';
+                progressBarElement.style.display = 'block';
+                completionAnim.style.display = 'none';
+            }, 3000);
+        }
+
+        // Function to check if game should be shown
+        function shouldShowGame() {
+            const showGameToggle = document.getElementById('showGameToggle');
+            return showGameToggle && showGameToggle.checked;
+        }
+
         // Parse button
         parseBtn.addEventListener('click', async () => {
             if (!selectedFile) return;
@@ -770,8 +892,19 @@
             if (showGameToggle && showGameToggle.checked) {
                 showGame();
             }
+
+            // Show and start progress bar
+            showParsingProgress();
             
             try {
+                // Simulate progress while waiting for response
+                let progress = 0;
+                const progressInterval = setInterval(() => {
+                    progress += Math.random() * 15;
+                    if (progress > 90) progress = 90;  // Cap at 90% until complete
+                    updateProgress(progress);
+                }, 500);
+
                 const response = await fetch('/upload', {
                     method: 'POST',
                     body: formData
@@ -779,8 +912,10 @@
                 
                 const data = await response.json();
                 
-                // Close game when done
-                closeGame();
+                // Clear progress interval and show completion
+                clearInterval(progressInterval);
+                updateProgress(100);
+                showCompletion();
                 
                 if (data.success) {
                     showStatus(`Successfully parsed ${data.count} events!`, 'success');
@@ -794,7 +929,6 @@
                     showStatus(`Error: ${data.error}`, 'error');
                 }
             } catch (error) {
-                closeGame();
                 showStatus(`Error: ${error.message}`, 'error');
             } finally {
                 parseBtn.disabled = false;
@@ -1039,7 +1173,7 @@
                 gameState.ads.push(ad);
             }
             
-            document.getElementById('gameScore').textContent = 'Time: 0 | Pipes: 0';
+            document.getElementById('gameScore').textContent = 'Time: 0';
             
             // Clear any existing intervals
             if (gameState.gameLoop) {
