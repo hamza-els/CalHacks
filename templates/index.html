@@ -629,7 +629,7 @@
                 <h3>🕹️ Flappy Calendar Bird</h3>
                 <p>Click/Tap or press SPACE to fly! Score points while parsing...</p>
             </div>
-            <div class="game-score"><span id="gameScore">Time: 0 | Pipes: 0</span></div>
+            <div class="game-score"><span id="gameScore">Time: 0</span></div>
             <canvas id="gameCanvas" width="400" height="600"></canvas>
         </div>
     </div>
@@ -1171,7 +1171,7 @@
                     // Play pipe passed sound
                     gameSounds.pipePassed.currentTime = 0; // Reset to beginning
                     gameSounds.pipePassed.play().catch(e => console.log('Sound play failed:', e));
-                    document.getElementById('gameScore').textContent = `Time: ${gameState.timeScore} | Pipes: ${gameState.score}`;
+                    document.getElementById('gameScore').textContent = `Time: ${gameState.timeScore}`;
                 }
                 
                 // Remove off-screen pipes
@@ -1235,7 +1235,7 @@
                                 gameState.pipeSpeed += 0.3;
                             }
                         }
-                        document.getElementById('gameScore').textContent = `Time: ${gameState.timeScore} | Pipes: ${gameState.score}`;
+                        document.getElementById('gameScore').textContent = `Time: ${gameState.timeScore}`;
                     }
                 }, 1000);
             }

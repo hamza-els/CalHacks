@@ -206,9 +206,11 @@ Return JSON array:"""
         
         # Use models that explicitly support vision
         model_names = [
-            'models/gemini-2.0-flash-exp',  # Primary choice for vision
-            'models/gemini-1.5-flash',  # Fallback
-            'models/gemini-1.5-pro',    # Fallback
+            'models/gemini-2.5-flash',  # Latest flash model
+            'models/gemini-2.0-flash',   # Stable flash model
+            'models/gemini-flash-latest', # Compatible version
+            'models/gemini-pro-latest',   # Pro version
+            'models/gemini-2.5-pro'       # Latest pro model
         ]
         
         print(f"Preparing image (size: {len(image_data)} bytes)...")
@@ -334,7 +336,8 @@ Return JSON array:"""
                     "recurring": recurring
                 }
                 events.append(event)
-                print(f"Successfully parsed event {idx + 1}/{len(events_raw)}: {event['title']}")
+                recurring_status = "♻️ Recurring" if recurring else "One-time"
+                print(f"Successfully parsed event {idx + 1}/{len(events_raw)}: {event['title']} ({recurring_status})")
             except Exception as e:
                 print(f"Error parsing event {idx + 1}: {e}")
                 continue
