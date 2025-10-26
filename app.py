@@ -541,7 +541,7 @@ def create_events():
         
         return jsonify({
             'success': True,
-            'message': f'Successfully created {len(created_events)} events in "{calendar_name}" calendar. You can toggle this calendar on/off or delete it entirely in Google Calendar.',
+            'message': f'Successfully created {len(created_events)} events in "{calendar_name}" calendar.',
             'events': created_events,
             'calendar_name': calendar_name,
             'calendar_link': calendar_link,

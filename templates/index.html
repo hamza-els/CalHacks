@@ -544,6 +544,11 @@
             max-width: 100%;
             height: auto;
         }
+
+        .dark-mode #gameCanvas {
+            border-color: #2D552D;
+            background: linear-gradient(to bottom, #0F1B3D 0%, #1A2333 30%, #1F2833 60%, #2B3542 100%);
+        }
         
         .game-score {
             margin: 10px 0;
@@ -621,6 +626,156 @@
             100% {
                 stroke-dashoffset: 0;
             }
+        }
+
+        /* Dark Mode Styles - Navy Blue Theme */
+        .dark-mode {
+            background: #0a1628 !important;
+        }
+
+        .dark-mode .container {
+            background: #1a2332 !important;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+        }
+
+        .dark-mode .header {
+            background: #162545 !important;
+        }
+
+        .dark-mode body {
+            background: #0a1628 !important;
+            color: #e0e0e0 !important;
+        }
+
+        .dark-mode .content {
+            background: #1a2332;
+        }
+
+        .dark-mode .upload-section {
+            border-color: #2d4d72;
+            background: rgba(45, 77, 114, 0.15);
+        }
+
+        .dark-mode .upload-section:hover {
+            border-color: #3d5f88;
+            background: rgba(45, 77, 114, 0.25);
+        }
+
+        .dark-mode .upload-section.dragover {
+            border-color: #3d5f88;
+            background: rgba(45, 77, 114, 0.3);
+        }
+
+        .dark-mode .upload-section h2 {
+            color: #e0e0e0;
+        }
+
+        .dark-mode .file-name {
+            color: #aaaaaa;
+        }
+
+        .dark-mode .events-table th {
+            background: #243446;
+            color: #e0e0e0;
+            border-bottom-color: #2d4d72;
+        }
+
+        .dark-mode .events-table td {
+            border-bottom-color: #243446;
+            color: #d0d0d0;
+        }
+
+        .dark-mode .events-table tr:hover {
+            background: #243446;
+        }
+
+        .dark-mode .events-header:hover {
+            background: #243446;
+        }
+
+        .dark-mode .events-count {
+            background: #243446;
+            color: #7eb3ff;
+        }
+
+        .dark-mode .settings-content {
+            background: #1a2332 !important;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+        }
+
+        .dark-mode .settings-content h3 {
+            color: #7eb3ff;
+        }
+
+        .dark-mode .setting-label {
+            color: #e0e0e0;
+        }
+
+        .dark-mode .status.success {
+            background: #1e3a2e;
+            color: #7fc97f;
+        }
+
+        .dark-mode .status.error {
+            background: #3a1e1e;
+            color: #ff8888;
+        }
+
+        .dark-mode .status.info {
+            background: #1e2a3a;
+            color: #7fc2ff;
+        }
+
+        .dark-mode .parsing-progress {
+            background: rgba(26, 35, 50, 0.95);
+        }
+
+        .dark-mode .progress-bar {
+            background: #243446;
+        }
+
+        .dark-mode .game-container {
+            background: #1a2332 !important;
+        }
+
+        .dark-mode .game-header p {
+            color: #aaaaaa;
+        }
+
+        .dark-mode .game-exit-btn {
+            background: #ff6666;
+        }
+
+        .dark-mode .game-exit-btn:hover {
+            background: #cc4444;
+        }
+
+        .dark-mode-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(26, 145, 240, 0.9);
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 28px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(26, 145, 240, 0.3);
+            z-index: 999;
+        }
+
+        .dark-mode-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 16px rgba(26, 145, 240, 0.4);
+        }
+
+        .dark-mode .dark-mode-toggle {
+            background: rgba(126, 179, 255, 0.9);
         }
     </style>
 </head>
@@ -737,7 +892,31 @@
         </div>
     </div>
     
+    <!-- Dark Mode Toggle -->
+    <button class="dark-mode-toggle" onclick="toggleDarkMode()" title="Toggle Dark Mode">🌙</button>
+
     <script>
+        // Dark Mode Toggle
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            html.classList.toggle('dark-mode');
+            const isDark = html.classList.contains('dark-mode');
+            localStorage.setItem('darkMode', isDark);
+            
+            const toggle = document.querySelector('.dark-mode-toggle');
+            if (isDark) {
+                toggle.textContent = '☀️';
+            } else {
+                toggle.textContent = '🌙';
+            }
+        }
+
+        // Load dark mode preference on page load
+        if (localStorage.getItem('darkMode') === 'true') {
+            document.documentElement.classList.add('dark-mode');
+            document.querySelector('.dark-mode-toggle').textContent = '☀️';
+        }
+
         const fileInput = document.getElementById('fileInput');
         const fileName = document.getElementById('fileName');
         const parseBtn = document.getElementById('parseBtn');
@@ -765,12 +944,16 @@
         let allEvents = []; // Store all parsed events
         
         // Collapse functionality
-        if (eventsHeader) {
-            eventsHeader.addEventListener('click', function() {
-                const isCollapsed = eventsHeader.classList.toggle('collapsed');
-                eventsContent.classList.toggle('expanded');
+        const eventsHeaderElement = document.getElementById('eventsHeader');
+        const eventsContentElement = document.getElementById('eventsContent');
+        if (eventsHeaderElement) {
+            eventsHeaderElement.addEventListener('click', function() {
+                const isCollapsed = eventsHeaderElement.classList.toggle('collapsed');
+                if (eventsContentElement) {
+                    eventsContentElement.classList.toggle('expanded');
+                }
                 // Update the collapse toggle symbol
-                const collapseToggle = eventsHeader.querySelector('.collapse-toggle');
+                const collapseToggle = eventsHeaderElement.querySelector('.collapse-toggle');
                 if (collapseToggle) {
                     collapseToggle.textContent = isCollapsed ? '+' : '-';
                 }
@@ -1052,8 +1235,12 @@
             
             eventsSection.classList.add('show');
             // Expand the events content when displaying
-            eventsHeader.classList.remove('collapsed');
-            eventsContent.classList.add('expanded');
+            if (eventsHeaderElement) {
+                eventsHeaderElement.classList.remove('collapsed');
+            }
+            if (eventsContentElement) {
+                eventsContentElement.classList.add('expanded');
+            }
         }
         
         function formatDate(isoString, isAllDay = false) {
@@ -1108,13 +1295,15 @@
             draw(ctx) {
                 // Draw plane
                 if (planeImage.complete) {
+                    const isDarkMode = document.documentElement.classList.contains('dark-mode');
+                    
                     // Draw the image with slight transparency
                     ctx.globalAlpha = 0.6;
                     ctx.drawImage(planeImage, this.x, this.y, 40, 40);
                     ctx.globalAlpha = 1.0;
 
-                    // Draw connecting lines
-                    ctx.strokeStyle = 'rgba(200, 200, 200, 0.4)';
+                    // Draw connecting lines - change color for dark mode
+                    ctx.strokeStyle = isDarkMode ? 'rgba(255, 180, 100, 0.5)' : 'rgba(200, 200, 200, 0.4)';
                     ctx.lineWidth = 2;
                     ctx.beginPath();
                     // First line from plane to banner
@@ -1125,12 +1314,20 @@
                     ctx.lineTo(this.x + this.width, this.y + 12);
                     ctx.stroke();
 
-                    // Draw banner (semi-transparent white background)
-                    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+                    // Draw banner - change background for dark mode
+                    if (isDarkMode) {
+                        ctx.fillStyle = 'rgba(139, 69, 19, 0.8)';  // Dark brown for dark mode
+                    } else {
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';  // White for light mode
+                    }
                     ctx.fillRect(this.x + this.width, this.y, this.bannerWidth, this.bannerHeight);
 
-                    // Draw banner text
-                    ctx.fillStyle = 'rgba(26, 145, 240, 0.8)';  // Match the modern blue theme
+                    // Draw banner text - change color for dark mode
+                    if (isDarkMode) {
+                        ctx.fillStyle = 'rgba(255, 220, 177, 0.95)';  // Light warm color for dark mode
+                    } else {
+                        ctx.fillStyle = 'rgba(26, 145, 240, 0.8)';  // Blue for light mode
+                    }
                     ctx.font = '16px Graphik, Arial';
                     ctx.textAlign = 'center';
                     ctx.fillText(this.text, this.x + this.width + (this.bannerWidth / 2), this.y + 20);
@@ -1144,6 +1341,7 @@
             bird: { x: 100, y: 250, width: 37, height: 33, velocity: 0, jump: -8 },
             pipes: [],
             ads: [],
+            stars: [],
             score: 0,
             timeScore: 0,
             startTime: null,
@@ -1188,6 +1386,7 @@
             
             gameState.pipes = [];
             gameState.ads = [];
+            gameState.stars = [];
             gameState.score = 0;
             gameState.timeScore = 0;
             gameState.startTime = null;
@@ -1200,6 +1399,19 @@
                 const ad = createRandomAd();
                 ad.x = gameState.canvas.width + (i * 400); // Space them 400px apart
                 gameState.ads.push(ad);
+            }
+            
+            // Create stars for night mode
+            const isDarkMode = document.documentElement.classList.contains('dark-mode');
+            if (isDarkMode) {
+                for (let i = 0; i < 100; i++) {
+                    gameState.stars.push({
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height,
+                        size: Math.random() * 1.5 + 0.5,
+                        opacity: Math.random() * 0.7 + 0.3
+                    });
+                }
             }
             
             document.getElementById('gameScore').textContent = 'Time: 0 | Score: 0';
@@ -1262,6 +1474,29 @@
             // Clear canvas
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
+            // Draw sunset/sky gradient if dark mode is active
+            const isDarkMode = document.documentElement.classList.contains('dark-mode');
+            if (isDarkMode) {
+                // Draw night sky gradient
+                const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+                gradient.addColorStop(0, '#0F1B3D');      // Deep midnight blue at top
+                gradient.addColorStop(0.3, '#1A2333');   // Dark blue-gray
+                gradient.addColorStop(0.6, '#1F2833');   // Slightly lighter dark blue
+                gradient.addColorStop(1, '#2B3542');      // Dark blue-black at bottom
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // Draw stars
+                ctx.fillStyle = '#FFFFFF';
+                for (const star of gameState.stars) {
+                    ctx.globalAlpha = star.opacity;
+                    ctx.beginPath();
+                    ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.globalAlpha = 1.0;
+            }
+            
             // If game not started, show start screen
             if (!gameState.gameStarted) {
                 showStartScreen();
@@ -1308,17 +1543,31 @@
                 const pipe = gameState.pipes[i];
                 pipe.x -= gameState.pipeSpeed;
                 
-                // Draw top pipe
-                ctx.fillStyle = '#2d5016';
-                ctx.fillRect(pipe.x, 0, pipe.width, pipe.topHeight);
-                ctx.fillStyle = '#228B22';
-                ctx.fillRect(pipe.x - 5, pipe.topHeight - 20, pipe.width + 10, 20);
-                
-                // Draw bottom pipe
-                ctx.fillStyle = '#2d5016';
-                ctx.fillRect(pipe.x, pipe.bottomY, pipe.width, canvas.height - pipe.bottomY);
-                ctx.fillStyle = '#228B22';
-                ctx.fillRect(pipe.x - 5, pipe.bottomY, pipe.width + 10, 20);
+                // Draw pipes with sunset colors in dark mode
+                const isDarkMode = document.documentElement.classList.contains('dark-mode');
+                if (isDarkMode) {
+                    // Dark foresty green pipes
+                    ctx.fillStyle = '#1B3D1B';  // Very dark forest green
+                    ctx.fillRect(pipe.x, 0, pipe.width, pipe.topHeight);
+                    ctx.fillStyle = '#2D552D';  // Dark forest green
+                    ctx.fillRect(pipe.x - 5, pipe.topHeight - 20, pipe.width + 10, 20);
+                    
+                    ctx.fillStyle = '#1B3D1B';
+                    ctx.fillRect(pipe.x, pipe.bottomY, pipe.width, canvas.height - pipe.bottomY);
+                    ctx.fillStyle = '#2D552D';
+                    ctx.fillRect(pipe.x - 5, pipe.bottomY, pipe.width + 10, 20);
+                } else {
+                    // Original green pipes
+                    ctx.fillStyle = '#2d5016';
+                    ctx.fillRect(pipe.x, 0, pipe.width, pipe.topHeight);
+                    ctx.fillStyle = '#228B22';
+                    ctx.fillRect(pipe.x - 5, pipe.topHeight - 20, pipe.width + 10, 20);
+                    
+                    ctx.fillStyle = '#2d5016';
+                    ctx.fillRect(pipe.x, pipe.bottomY, pipe.width, canvas.height - pipe.bottomY);
+                    ctx.fillStyle = '#228B22';
+                    ctx.fillRect(pipe.x - 5, pipe.bottomY, pipe.width + 10, 20);
+                }
                 
                 // Check collision
                 if (gameState.bird.x < pipe.x + pipe.width &&
