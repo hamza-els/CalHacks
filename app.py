@@ -127,7 +127,6 @@ def upload_file():
     
     # Clear any previously stored content when uploading to the syllabus page
     session.pop('events', None)
-    session.pop('file_content', None)
     session.pop('filename', None)
     
     # Add a unique upload ID for tracking
@@ -216,15 +215,15 @@ def upload_file():
         
         print(f"Events serialized, storing in session...")
         
-        # Store events and file content in session for later use
+        # Store events and filename in session for later use
+        # NOTE: We deliberately do NOT store file_content in session because:
+        # 1. It causes the session cookie to exceed 4KB (browsers reject it)
+        # 2. The file is already saved to disk and can be re-read
         session['events'] = events_serialized
-        session['file_content'] = text if 'text' in locals() else None
         session['filename'] = filename
         
         print(f"DEBUG [UPLOAD]: Upload ID: {upload_id}")
-        print(f"DEBUG: Stored file_content length: {len(session.get('file_content', ''))}")
         print(f"DEBUG: Stored filename: {session.get('filename', '')}")
-        print(f"DEBUG: Stored file_content preview: {session.get('file_content', '')[:200] if session.get('file_content') else 'None'}...")
         
         print("Response ready to send")
         
@@ -379,13 +378,17 @@ def create_events():
         event_indices = request.json.get('event_indices', []) if request.is_json else []
         
         # Get filename from request body (frontend sends it directly to avoid session cookie issues)
-        filename = request.json.get('filename', '') if request.is_json else ''
+        request_filename = request.json.get('filename', '') if request.is_json else ''
+        
+        # Get the actual stored filename from session (this is the secure filename saved to disk)
+        filename = session.get('filename', '')
         
         service = create_google_service()
         events = session['events']
         
-        # Debug: Print filename from request
-        print(f"DEBUG [CREATE-EVENTS]: Filename from request: {repr(filename)}")
+        # Debug: Print filenames
+        print(f"DEBUG [CREATE-EVENTS]: Request filename: {repr(request_filename)}")
+        print(f"DEBUG [CREATE-EVENTS]: Stored filename: {repr(filename)}")
         
         # Re-read the file content from disk to ensure we get the correct file
         # This guarantees we're always using the most recently uploaded file
