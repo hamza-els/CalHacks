@@ -332,19 +332,13 @@
         }
         
         .collapse-toggle {
-            font-size: 1.2em;
-            transition: transform 0.3s;
+            font-size: 1.4em;
             display: inline-block;
+            width: 20px;
+            text-align: center;
+            font-weight: bold;
         }
-        
-        .events-header.collapsed .collapse-toggle {
-            transform: rotate(0deg);
-        }
-        
-        .events-header:not(.collapsed) .collapse-toggle {
-            transform: rotate(90deg);
-        }
-        
+                
         .events-content {
             transition: max-height 0.3s ease-out;
             overflow: hidden;
@@ -353,6 +347,11 @@
         
         .events-content.expanded {
             max-height: 5000px;
+        }
+        
+        .events-section .actions {
+            opacity: 1;
+            transition: opacity 0.3s ease-out;
         }
         
         .events-table {
@@ -638,7 +637,7 @@
             
             <div class="events-section" id="eventsSection">
                 <div class="events-header collapsed" id="eventsHeader">
-                    <h2>📋 Extracted Events <span class="collapse-toggle">▶</span></h2>
+                    <h2>📋 Extracted Events <span class="collapse-toggle">+</span></h2>
                     <div class="events-count" id="eventsCount"></div>
                 </div>
                 <div class="events-content" id="eventsContent">
@@ -657,10 +656,9 @@
                         <tbody id="eventsTableBody">
                         </tbody>
                     </table>
-                    
-                    <div class="actions">
-                        <button class="btn btn-success" id="createBtn" disabled>Add to Google Calendar</button>
-                    </div>
+                </div>
+                <div class="actions" style="margin-top: 20px;">
+                    <button class="btn btn-success" id="createBtn" disabled>Add to Google Calendar</button>
                 </div>
             </div>
         </div>
@@ -744,8 +742,13 @@
         // Collapse functionality
         if (eventsHeader) {
             eventsHeader.addEventListener('click', function() {
-                eventsHeader.classList.toggle('collapsed');
+                const isCollapsed = eventsHeader.classList.toggle('collapsed');
                 eventsContent.classList.toggle('expanded');
+                // Update the collapse toggle symbol
+                const collapseToggle = eventsHeader.querySelector('.collapse-toggle');
+                if (collapseToggle) {
+                    collapseToggle.textContent = isCollapsed ? '+' : '-';
+                }
             });
         }
         
