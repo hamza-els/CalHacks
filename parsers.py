@@ -121,7 +121,7 @@ Return a JSON array. Each item should have:
 - type: Either "event" or "task"
 - title: A short, descriptive title, do not include the date or time
 - start_text: The exact start date/time mentioned (keep original format) OR due date for tasks
-- end_text: The exact end date/time mentioned, or "1 hour" for events, "0" for tasks
+- end_text: The exact end date/time mentioned OR EXACTLY 1 HOUR AFTER start_text
 - location: Building name, room number, or "Online" if mentioned (usually empty for tasks)
 - description: For recurring events/tasks, include days of week (e.g., "Lecture MWF", "Lab TTH", "Assignment Monday"). For non-recurring: Category like "Lecture", "Lab", "Exam", "Discussion", "Assignment", "Project"
 - recurring: Boolean indicating if this event/task recurs (e.g., weekly lectures, weekly assignments, recurring meetings). Events/tasks for which there is not specified date but there is a day of the week (or multiple ex: M W (Every Monday and Wednesday)) are likely to be recurring
