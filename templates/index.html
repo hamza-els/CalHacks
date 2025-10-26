@@ -973,11 +973,12 @@
                 
                 if (data.success) {
                     showStatus(`✅ ${data.message}`, 'success');
-                    let links = '<br>Created events:<br>';
-                    data.events.forEach(e => {
-                        links += `<a href="${e.link}" target="_blank">${e.title}</a><br>`;
-                    });
-                    status.innerHTML = `✅ ${data.message}${links}`;
+                    // Add calendar link if available
+                    if (data.calendar_link) {
+                        status.innerHTML = `✅ ${data.message}<br><a href="${data.calendar_link}" target="_blank">Open Calendar</a>`;
+                    } else {
+                        status.innerHTML = `✅ ${data.message}`;
+                    }
                 } else {
                     showStatus(`Error: ${data.error}`, 'error');
                 }

@@ -158,6 +158,9 @@ def upload_file():
             # Process image file using Gemini Vision (extracts events directly)
             events = extract_events_from_image(filepath)
             print(f"Successfully extracted {len(events)} events from image")
+            
+            # For images, we'll use the filename as content for naming
+            text = filename
         else:
             # Read text content from text or PDF files
             try:
@@ -200,8 +203,14 @@ def upload_file():
         
         print(f"Events serialized, storing in session...")
         
-        # Store events in session for later use
+        # Store events and file content in session for later use
         session['events'] = events_serialized
+        session['file_content'] = text if 'text' in locals() else None
+        session['filename'] = filename
+        
+        print(f"DEBUG: Stored file_content length: {len(session.get('file_content', ''))}")
+        print(f"DEBUG: Stored filename: {session.get('filename', '')}")
+        print(f"DEBUG: Stored file_content preview: {session.get('file_content', '')[:200] if session.get('file_content') else 'None'}...")
         
         print("Response ready to send")
         
@@ -357,9 +366,15 @@ def create_events():
         
         service = create_google_service()
         events = session['events']
+        file_content = session.get('file_content', '')
+        filename = session.get('filename', '')
+        
+        print(f"DEBUG: file_content length: {len(file_content)}")
+        print(f"DEBUG: filename: {filename}")
+        print(f"DEBUG: file_content preview: {file_content[:200] if file_content else 'None'}...")
         
         # Create or get the syllabus calendar
-        syllabus_calendar_id, calendar_name = create_or_get_syllabus_calendar(service, events)
+        syllabus_calendar_id, calendar_name = create_or_get_syllabus_calendar(service, file_content, filename)
         
         # Filter events based on user selection
         if event_indices:
@@ -418,9 +433,9 @@ def create_events():
         
         return jsonify({
             'success': True,
-            'message': f'Successfully created {len(created_events)} events in "{calendar_name}" calendar. You can toggle this calendar on/off or delete it entirely in Google Calendar.',
-            'events': created_events,
-            'calendar_name': calendar_name
+            'message': f'Created calendar "{calendar_name}" with {len(created_events)} events',
+            'calendar_name': calendar_name,
+            'calendar_link': f'https://calendar.google.com/calendar/r'
         })
     except Exception as e:
         import traceback
