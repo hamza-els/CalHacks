@@ -8,7 +8,6 @@ from datetime import datetime
 from dotenv import load_dotenv
 
 from parsers import extract_events_from_text, extract_events_with_gemini
-from parsers_general import extract_events_with_gemini_general
 from calendar_utils import create_google_service, create_google_event, create_calendar
 from image_processor import extract_events_from_image, get_supported_image_formats
 
@@ -40,12 +39,6 @@ def allowed_file(filename):
 def index():
     """Render the main upload page."""
     return render_template('index.html')
-
-
-@app.route('/events')
-def events():
-    """Render the general events parser page."""
-    return render_template('events.html')
 
 
 @app.route('/auth-status')
@@ -128,9 +121,20 @@ def signout():
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
-    """Handle file upload and parse events."""
+    """Handle file upload and parse events for syllabus parsing."""
     if 'file' not in request.files:
         return jsonify({'error': 'No file provided'}), 400
+    
+    # Clear any previously stored content when uploading to the syllabus page
+    session.pop('events', None)
+    session.pop('file_content', None)
+    session.pop('filename', None)
+    
+    # Add a unique upload ID for tracking
+    import uuid
+    upload_id = str(uuid.uuid4())[:8]
+    session['upload_id'] = upload_id
+    print(f"DEBUG [UPLOAD]: Created upload ID: {upload_id}")
     
     file = request.files['file']
     
@@ -166,8 +170,10 @@ def upload_file():
             events = extract_events_from_image(filepath)
             print(f"Successfully extracted {len(events)} events from image")
             
-            # For images, we'll use the filename as content for naming
-            text = filename
+            # For images, extract text for calendar naming
+            # Use event titles as context for calendar name generation
+            event_titles = ' '.join([event.get('title', '') for event in events[:5]])  # First 5 event titles
+            text = event_titles if event_titles else filename
         else:
             # Read text content from text or PDF files
             try:
@@ -215,104 +221,10 @@ def upload_file():
         session['file_content'] = text if 'text' in locals() else None
         session['filename'] = filename
         
+        print(f"DEBUG [UPLOAD]: Upload ID: {upload_id}")
         print(f"DEBUG: Stored file_content length: {len(session.get('file_content', ''))}")
         print(f"DEBUG: Stored filename: {session.get('filename', '')}")
         print(f"DEBUG: Stored file_content preview: {session.get('file_content', '')[:200] if session.get('file_content') else 'None'}...")
-        
-        print("Response ready to send")
-        
-        return jsonify({
-            'success': True,
-            'events': events_serialized,
-            'count': len(events_serialized)
-        })
-    except Exception as e:
-        return jsonify({'error': f'Error parsing events: {str(e)}'}), 500
-
-
-@app.route('/upload-events', methods=['POST'])
-def upload_general_events_file():
-    """Handle file upload and parse events for general documents (not syllabi)."""
-    if 'file' not in request.files:
-        return jsonify({'error': 'No file provided'}), 400
-    
-    file = request.files['file']
-    
-    if file.filename == '':
-        return jsonify({'error': 'No file selected'}), 400
-    
-    if not allowed_file(file.filename):
-        return jsonify({'error': 'File type not allowed. Please upload .txt, .pdf, or image files.'}), 400
-    
-    # Save file
-    filename = secure_filename(file.filename)
-    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    file.save(filepath)
-    print(f"File saved: {filename}")
-    
-    # Check if it's an image file
-    image_extensions = {'.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp'}
-    file_ext = '.' + filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
-    
-    print(f"File extension: {file_ext}")
-    
-    # Extract events
-    try:
-        use_gemini = os.environ.get('GEMINI_API_KEY') is not None
-        
-        if file_ext in image_extensions:
-            # Handle image files with Gemini Vision
-            print(f"Processing image file: {filename}")
-            if not use_gemini:
-                return jsonify({'error': 'GEMINI_API_KEY is required for image processing'}), 400
-            
-            # Process image file using Gemini Vision (extracts events directly)
-            events = extract_events_from_image(filepath)
-            print(f"Successfully extracted {len(events)} events from image")
-        else:
-            # Read text content from text or PDF files
-            try:
-                if filename.endswith('.txt'):
-                    with open(filepath, 'r', encoding='utf-8') as f:
-                        text = f.read()
-                elif filename.endswith('.pdf'):
-                    # Extract text from PDF using pdfplumber
-                    import pdfplumber
-                    text = ''
-                    with pdfplumber.open(filepath) as pdf:
-                        for page in pdf.pages:
-                            text += page.extract_text() + '\n'
-                else:
-                    return jsonify({'error': 'Unsupported file type'}), 400
-            except Exception as e:
-                return jsonify({'error': f'Error reading file: {str(e)}'}), 500
-            
-            # Extract events from text using general parser (not syllabus-specific)
-            if use_gemini:
-                events = extract_events_with_gemini_general(text)
-            else:
-                events = extract_events_from_text(text)
-        
-        print(f"Serializing {len(events)} events...")
-        
-        # Convert datetime objects to ISO strings for JSON serialization
-        events_serialized = []
-        for event in events:
-            events_serialized.append({
-                'title': event['title'],
-                'start': event['start'].isoformat(),
-                'end': event['end'].isoformat(),
-                'description': event.get('description', ''),
-                'location': event.get('location', ''),
-                'type': event.get('type', 'event'),
-                'all_day': event.get('all_day', False),
-                'recurring': event.get('recurring', False)
-            })
-        
-        print(f"Events serialized, storing in session...")
-        
-        # Store events in session for later use
-        session['events'] = events_serialized
         
         print("Response ready to send")
         
@@ -466,20 +378,49 @@ def create_events():
         # Get event indices to create (user selections)
         event_indices = request.json.get('event_indices', []) if request.is_json else []
         
-        # Check if this is from the general events page
-        is_general_events = request.json.get('is_general_events', False) if request.is_json else False
+        # Get filename from request body (frontend sends it directly to avoid session cookie issues)
+        filename = request.json.get('filename', '') if request.is_json else ''
         
         service = create_google_service()
         events = session['events']
-        file_content = session.get('file_content', '')
-        filename = session.get('filename', '')
         
-        print(f"DEBUG: file_content length: {len(file_content)}")
+        # Debug: Print filename from request
+        print(f"DEBUG [CREATE-EVENTS]: Filename from request: {repr(filename)}")
+        
+        # Re-read the file content from disk to ensure we get the correct file
+        # This guarantees we're always using the most recently uploaded file
+        file_content = ''
+        if filename:
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            if os.path.exists(filepath):
+                try:
+                    if filename.endswith('.txt'):
+                        with open(filepath, 'r', encoding='utf-8') as f:
+                            file_content = f.read()
+                    elif filename.endswith('.pdf'):
+                        import pdfplumber
+                        with pdfplumber.open(filepath) as pdf:
+                            for page in pdf.pages:
+                                file_content += page.extract_text() + '\n'
+                except Exception as e:
+                    print(f"ERROR reading file for calendar naming: {e}")
+            else:
+                print(f"WARNING: File '{filename}' not found on disk! Filepath: {filepath}")
+                print(f"This usually means old session data. We'll use default calendar name.")
+        
+        print(f"DEBUG [CREATE-EVENTS]: Upload ID: {session.get('upload_id', 'none')}")
         print(f"DEBUG: filename: {filename}")
+        print(f"DEBUG: file_content length: {len(file_content)}")
         print(f"DEBUG: file_content preview: {file_content[:200] if file_content else 'None'}...")
         
+        # Check if file_content is actually being passed
+        if not file_content or file_content.strip() == '':
+            print(f"ERROR: file_content is empty! This means Gemini won't be able to generate a proper calendar name.")
+            print(f"Filename: {filename}")
+            print(f"Filepath: {filepath if filename else 'None'}")
+        
         # Create a new calendar (always creates a new one)
-        syllabus_calendar_id, calendar_name = create_calendar(service, file_content, filename, is_general_events=is_general_events)
+        syllabus_calendar_id, calendar_name = create_calendar(service, file_content, filename)
         
         # Get calendar link (always generate for both syllabus and general events)
         calendar_link = f"https://calendar.google.com/calendar/render?cid={syllabus_calendar_id}"
@@ -544,8 +485,7 @@ def create_events():
             'message': f'Successfully created {len(created_events)} events in "{calendar_name}" calendar.',
             'events': created_events,
             'calendar_name': calendar_name,
-            'calendar_link': calendar_link,
-            'is_general_events': is_general_events
+            'calendar_link': calendar_link
         })
     except Exception as e:
         import traceback

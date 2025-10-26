@@ -61,19 +61,22 @@ def create_google_service(credentials_path: str = "credentials.json", token_path
     return service
 
 
-def create_calendar(service, file_content=None, filename=None, is_general_events=False) -> tuple:
-    """Create a new calendar for syllabus or general events. ALWAYS creates a new calendar.
+def create_calendar(service, file_content=None, filename=None) -> tuple:
+    """Create a new calendar for syllabus events. ALWAYS creates a new calendar.
     
     service: Google Calendar API service object
     file_content: the actual text content of the uploaded file (optional)
     filename: name of the uploaded file (optional)
-    is_general_events: if True, use "General Events" as default name instead of "Syllabus Events"
     Returns a tuple of (calendar_id, calendar_name).
     """
-    calendar_name = "General Events" if is_general_events else "Syllabus Events"
+    calendar_name = "Syllabus Events"
     
-    # Generate dynamic calendar name using file content (only for syllabi)
-    if file_content and len(file_content.strip()) > 0 and not is_general_events:
+    # Log which file we're using
+    print(f"DEBUG [CALENDAR UTILS]: Creating calendar with filename: {filename}")
+    print(f"DEBUG [CALENDAR UTILS]: file_content length: {len(file_content) if file_content else 0}")
+    
+    # Generate dynamic calendar name using file content
+    if file_content and len(file_content.strip()) > 0:
         try:
             import google.generativeai as genai
             import os
@@ -84,6 +87,10 @@ def create_calendar(service, file_content=None, filename=None, is_general_events
                 
                 # Use first 1300 characters of file content (typically first page)
                 content_snippet = file_content[:1300]
+                
+                print(f"DEBUG [CALENDAR UTILS]: Sending content snippet to Gemini for calendar naming:")
+                print(f"DEBUG [CALENDAR UTILS]: Content snippet (first 500 chars): {content_snippet[:500]}")
+                print(f"DEBUG [CALENDAR UTILS]: Content snippet length: {len(content_snippet)}")
                 
                 prompt = f"""Extract the course code and number from this syllabus. This is VERY IMPORTANT.
 
@@ -96,13 +103,14 @@ Examples: "Discrete Mathematics", "Introduction to Algorithms", "Calculus I"
 
 DO NOT return generic terms like "Math", "Computer Science", "English", "Physics", etc.
 DO NOT return the word "syllabus", "course", "class", or "schedule".
+DO NOT use cached or remembered information from previous requests.
 
-Return ONLY the course identifier or title (max 30 characters).
+READ THE SYLLABUS CONTENT BELOW CAREFULLY and extract the specific course information:
 
 Syllabus content:
 {content_snippet}
 
-Return only the course code or title, nothing else:"""
+Return ONLY the course code or title from the content above (max 30 characters), nothing else:"""
                 for model_name in ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.0-flash"]:
                     try:
                         model = genai.GenerativeModel(model_name)
@@ -121,7 +129,7 @@ Return only the course code or title, nothing else:"""
             print(f"Gemini API not available for naming: {e}, using default")
     
     # Always create a new calendar
-    description = 'Events extracted from general documents' if is_general_events else 'Events extracted from academic syllabi'
+    description = 'Events extracted from academic syllabi'
     calendar_body = {
         'summary': calendar_name,
         'description': description,

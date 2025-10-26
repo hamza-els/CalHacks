@@ -783,7 +783,6 @@
     <div class="container">
         <div class="header">
             <button class="settings-btn" onclick="showSettings()" title="Settings">⚙️</button>
-            <a href="/events" class="events-btn" title="General Events">📄 General Events</a>
             <h1><img src="{{ url_for('static', filename='favicon.ico') }}" style="width: 48px; height: 48px; vertical-align: middle; margin-right: 12px;">EarlyBird</h1>
             <p>Upload your syllabus and automatically create calendar events</p>
             <div id="authStatus" style="margin-top: 20px; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 20px; display: none;">
@@ -1176,7 +1175,8 @@
                     },
                     body: JSON.stringify({
                         timezone: userTimezone,
-                        event_indices: checkedIndices
+                        event_indices: checkedIndices,
+                        filename: selectedFile ? selectedFile.name : ''
                     })
                 });
                 
@@ -1234,12 +1234,11 @@
             }
             
             eventsSection.classList.add('show');
-            // Expand the events content when displaying
-            if (eventsHeaderElement) {
-                eventsHeaderElement.classList.remove('collapsed');
-            }
-            if (eventsContentElement) {
-                eventsContentElement.classList.add('expanded');
+            // Keep events list collapsed by default (leave collapsed class)
+            // Update the collapse toggle symbol to show "+"
+            const collapseToggle = eventsHeaderElement.querySelector('.collapse-toggle');
+            if (collapseToggle) {
+                collapseToggle.textContent = '+';
             }
         }
         
