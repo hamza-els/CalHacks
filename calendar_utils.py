@@ -88,18 +88,26 @@ def create_or_get_syllabus_calendar(service, events_data=None, is_general_events
                 for event in events_data[:5]:  # Use first 5 events for context
                     events_summary.append(f"- {event.get('title', 'Event')}: {event.get('description', '')}")
                 
-                prompt = f"""Based on these calendar events, generate a concise, descriptive calendar name (max 30 characters) that captures the main topic/subject:
+                prompt = f"""Based on these calendar events, extract the course code or identifier.
 
+PRIORITY: Look for course codes like:
+- "CS 61A", "CS 101", "Math 1B", "ENG 125", "EECS 16A"
+- Format: [Department] [Number] (e.g., CS 61A, Math 1B, ENG 125)
+
+If you find a course code, use it as the calendar name.
+If no course code is found, generate a descriptive name based on the subject (max 30 characters).
+
+Examples:
+- "CS 61A"
+- "Math 1B"
+- "ENG 125"
+- "Physics Lab"
+
+Events:
 {chr(10).join(events_summary)}
 
-Examples of good names:
-- "CS 101 Fall 2024"
-- "Math 1B Calculus"
-- "ENG 125 Ethics"
-- "Physics Lab Schedule"
-
 Return only the calendar name, nothing else:"""
-
+            for model_name in ["gemini-2.5-flash", "gemini-2.5-pro"]:
                 try:
                     model = genai.GenerativeModel(model_name)
                     response = model.generate_content(prompt)
@@ -111,8 +119,10 @@ Return only the calendar name, nothing else:"""
                         print(f"Generated calendar name: {calendar_name}")
                     else:
                         print(f"Generated name too long or invalid: {suggested_name}, using default")
+                        calendar_name = "Syllabus Events"
                 except Exception as e:
                     print(f"Error generating calendar name: {e}, using default")
+                    calendar_name = "Syllabus Events"
         except Exception as e:
             print(f"Gemini API not available for naming: {e}, using default")
     
