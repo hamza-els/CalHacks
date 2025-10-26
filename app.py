@@ -350,11 +350,23 @@ def create_events():
         # Get timezone from request or use default
         user_timezone = request.json.get('timezone', 'America/Los_Angeles') if request.is_json else 'America/Los_Angeles'
         
+        # Get event indices to create (user selections)
+        event_indices = request.json.get('event_indices', []) if request.is_json else []
+        
         service = create_google_service()
         events = session['events']
+        
+        # Filter events based on user selection
+        if event_indices:
+            events_to_create = [events[i] for i in event_indices if 0 <= i < len(events)]
+            print(f"Creating {len(events_to_create)} selected events out of {len(events)} total")
+        else:
+            events_to_create = events
+            print(f"No selection made, creating all {len(events)} events")
+        
         created_events = []
         
-        for event_data in events:
+        for event_data in events_to_create:
             try:
                 # Create a copy of the event to avoid modifying session data
                 event = event_data.copy()
@@ -368,10 +380,19 @@ def create_events():
                     print(f"Skipping event '{event['title']}': Invalid datetime values")
                     continue
                 
-                # Check for valid time range
-                if start_dt >= end_dt:
+                # Get event type
+                event_type = event_data.get('type', 'event')
+                is_all_day = event_data.get('all_day', False) or event_type == 'task'
+                
+                # Check for valid time range (allow start == end for all-day tasks)
+                if not is_all_day and start_dt >= end_dt:
                     print(f"Skipping event '{event['title']}': Start time ({start_dt}) is not before end time ({end_dt})")
                     continue
+                
+                # For all-day tasks, ensure end_dt is at least start_dt (can be equal)
+                if is_all_day and end_dt < start_dt:
+                    print(f"Adjusting end time for all-day task '{event['title']}' from {end_dt} to {start_dt}")
+                    end_dt = start_dt
                 
                 event['start'] = start_dt
                 event['end'] = end_dt
