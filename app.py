@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 
 from parsers import extract_events_from_text, extract_events_with_gemini
 from parsers_general import extract_events_with_gemini_general
-from calendar_utils import create_google_service, create_google_event, create_or_get_syllabus_calendar
+from calendar_utils import create_google_service, create_google_event, create_calendar
 from image_processor import extract_events_from_image, get_supported_image_formats
 
 # Load environment variables from .env file
@@ -478,19 +478,11 @@ def create_events():
         print(f"DEBUG: filename: {filename}")
         print(f"DEBUG: file_content preview: {file_content[:200] if file_content else 'None'}...")
         
-        # Create or get the calendar (syllabus or general events)
-        syllabus_calendar_id, calendar_name = create_or_get_syllabus_calendar(service, file_content, filename, is_general_events=is_general_events)
+        # Create a new calendar (always creates a new one)
+        syllabus_calendar_id, calendar_name = create_calendar(service, file_content, filename, is_general_events=is_general_events)
         
-        # Get calendar link if this is general events
-        calendar_link = None
-        if is_general_events:
-            try:
-                calendar = service.calendars().get(calendarId=syllabus_calendar_id).execute()
-                calendar_link = calendar.get('id')  # Calendar ID can be used to construct link
-                # Construct the Google Calendar URL
-                calendar_link = f"https://calendar.google.com/calendar/render?cid={syllabus_calendar_id}"
-            except Exception as e:
-                print(f"Error getting calendar link: {e}")
+        # Get calendar link (always generate for both syllabus and general events)
+        calendar_link = f"https://calendar.google.com/calendar/render?cid={syllabus_calendar_id}"
         
         # Filter events based on user selection
         if event_indices:

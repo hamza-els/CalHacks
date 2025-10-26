@@ -61,8 +61,8 @@ def create_google_service(credentials_path: str = "credentials.json", token_path
     return service
 
 
-def create_or_get_syllabus_calendar(service, file_content=None, filename=None, is_general_events=False) -> tuple:
-    """Create a new calendar for syllabus events or return existing one.
+def create_calendar(service, file_content=None, filename=None, is_general_events=False) -> tuple:
+    """Create a new calendar for syllabus or general events. ALWAYS creates a new calendar.
     
     service: Google Calendar API service object
     file_content: the actual text content of the uploaded file (optional)
@@ -120,32 +120,19 @@ Return only the course code or title, nothing else:"""
         except Exception as e:
             print(f"Gemini API not available for naming: {e}, using default")
     
-    try:
-        # Check if syllabus calendar already exists
-        calendar_list = service.calendarList().list().execute()
-        for calendar in calendar_list.get('items', []):
-            if calendar.get('summary') == calendar_name:
-                print(f"Found existing syllabus calendar: {calendar['id']}")
-                return calendar['id'], calendar_name
-        
-        # Create new calendar if it doesn't exist
-        description = 'Events extracted from general documents' if is_general_events else 'Events extracted from academic syllabi'
-        calendar_body = {
-            'summary': calendar_name,
-            'description': description,
-            'timeZone': 'America/Los_Angeles'
-        }
-        
-        created_calendar = service.calendars().insert(body=calendar_body).execute()
-        calendar_id = created_calendar['id']
-        print(f"Created new syllabus calendar: {calendar_id} with name: {calendar_name}")
-        
-        return calendar_id, calendar_name
-        
-    except Exception as e:
-        print(f"Error creating/getting syllabus calendar: {e}")
-        # Fallback to primary calendar if there's an issue
-        return "primary", "Primary Calendar"
+    # Always create a new calendar
+    description = 'Events extracted from general documents' if is_general_events else 'Events extracted from academic syllabi'
+    calendar_body = {
+        'summary': calendar_name,
+        'description': description,
+        'timeZone': 'America/Los_Angeles'
+    }
+    
+    created_calendar = service.calendars().insert(body=calendar_body).execute()
+    calendar_id = created_calendar['id']
+    print(f"Created new calendar: {calendar_id} with name: {calendar_name}")
+    
+    return calendar_id, calendar_name
 
 
 def create_google_event(service, event: Dict, calendar_id: str = "primary", timezone: str = "America/Los_Angeles") -> Dict:
