@@ -8,6 +8,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 
 from parsers import extract_events_from_text, extract_events_with_gemini
+from parsers_general import extract_events_with_gemini_general
 from calendar_utils import create_google_service, create_google_event, create_or_get_syllabus_calendar
 from image_processor import extract_events_from_image, get_supported_image_formats
 
@@ -39,6 +40,12 @@ def allowed_file(filename):
 def index():
     """Render the main upload page."""
     return render_template('index.html')
+
+
+@app.route('/events')
+def events():
+    """Render the general events parser page."""
+    return render_template('events.html')
 
 
 @app.route('/auth-status')
@@ -179,6 +186,101 @@ def upload_file():
             # Extract events from text
             if use_gemini:
                 events = extract_events_with_gemini(text)
+            else:
+                events = extract_events_from_text(text)
+        
+        print(f"Serializing {len(events)} events...")
+        
+        # Convert datetime objects to ISO strings for JSON serialization
+        events_serialized = []
+        for event in events:
+            events_serialized.append({
+                'title': event['title'],
+                'start': event['start'].isoformat(),
+                'end': event['end'].isoformat(),
+                'description': event.get('description', ''),
+                'location': event.get('location', ''),
+                'type': event.get('type', 'event'),
+                'all_day': event.get('all_day', False),
+                'recurring': event.get('recurring', False)
+            })
+        
+        print(f"Events serialized, storing in session...")
+        
+        # Store events in session for later use
+        session['events'] = events_serialized
+        
+        print("Response ready to send")
+        
+        return jsonify({
+            'success': True,
+            'events': events_serialized,
+            'count': len(events_serialized)
+        })
+    except Exception as e:
+        return jsonify({'error': f'Error parsing events: {str(e)}'}), 500
+
+
+@app.route('/upload-events', methods=['POST'])
+def upload_events_file():
+    """Handle file upload and parse events for general documents (not syllabi)."""
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file provided'}), 400
+    
+    file = request.files['file']
+    
+    if file.filename == '':
+        return jsonify({'error': 'No file selected'}), 400
+    
+    if not allowed_file(file.filename):
+        return jsonify({'error': 'File type not allowed. Please upload .txt, .pdf, or image files.'}), 400
+    
+    # Save file
+    filename = secure_filename(file.filename)
+    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    file.save(filepath)
+    print(f"File saved: {filename}")
+    
+    # Check if it's an image file
+    image_extensions = {'.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp'}
+    file_ext = '.' + filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
+    
+    print(f"File extension: {file_ext}")
+    
+    # Extract events
+    try:
+        use_gemini = os.environ.get('GEMINI_API_KEY') is not None
+        
+        if file_ext in image_extensions:
+            # Handle image files with Gemini Vision
+            print(f"Processing image file: {filename}")
+            if not use_gemini:
+                return jsonify({'error': 'GEMINI_API_KEY is required for image processing'}), 400
+            
+            # Process image file using Gemini Vision (extracts events directly)
+            events = extract_events_from_image(filepath)
+            print(f"Successfully extracted {len(events)} events from image")
+        else:
+            # Read text content from text or PDF files
+            try:
+                if filename.endswith('.txt'):
+                    with open(filepath, 'r', encoding='utf-8') as f:
+                        text = f.read()
+                elif filename.endswith('.pdf'):
+                    # Extract text from PDF using pdfplumber
+                    import pdfplumber
+                    text = ''
+                    with pdfplumber.open(filepath) as pdf:
+                        for page in pdf.pages:
+                            text += page.extract_text() + '\n'
+                else:
+                    return jsonify({'error': 'Unsupported file type'}), 400
+            except Exception as e:
+                return jsonify({'error': f'Error reading file: {str(e)}'}), 500
+            
+            # Extract events from text using general parser (not syllabus-specific)
+            if use_gemini:
+                events = extract_events_with_gemini_general(text)
             else:
                 events = extract_events_from_text(text)
         
@@ -355,11 +457,25 @@ def create_events():
         # Get event indices to create (user selections)
         event_indices = request.json.get('event_indices', []) if request.is_json else []
         
+        # Check if this is from the general events page
+        is_general_events = request.json.get('is_general_events', False) if request.is_json else False
+        
         service = create_google_service()
         events = session['events']
         
-        # Create or get the syllabus calendar
-        syllabus_calendar_id, calendar_name = create_or_get_syllabus_calendar(service, events)
+        # Create or get the calendar (syllabus or general events)
+        syllabus_calendar_id, calendar_name = create_or_get_syllabus_calendar(service, events, is_general_events=is_general_events)
+        
+        # Get calendar link if this is general events
+        calendar_link = None
+        if is_general_events:
+            try:
+                calendar = service.calendars().get(calendarId=syllabus_calendar_id).execute()
+                calendar_link = calendar.get('id')  # Calendar ID can be used to construct link
+                # Construct the Google Calendar URL
+                calendar_link = f"https://calendar.google.com/calendar/render?cid={syllabus_calendar_id}"
+            except Exception as e:
+                print(f"Error getting calendar link: {e}")
         
         # Filter events based on user selection
         if event_indices:
@@ -420,7 +536,9 @@ def create_events():
             'success': True,
             'message': f'Successfully created {len(created_events)} events in "{calendar_name}" calendar. You can toggle this calendar on/off or delete it entirely in Google Calendar.',
             'events': created_events,
-            'calendar_name': calendar_name
+            'calendar_name': calendar_name,
+            'calendar_link': calendar_link,
+            'is_general_events': is_general_events
         })
     except Exception as e:
         import traceback

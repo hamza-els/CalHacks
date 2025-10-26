@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Syllabus to Calendar Converter</title>
+    <title>General Event Parser</title>
     <style>
         * {
             margin: 0;
@@ -51,7 +51,7 @@
         }
         
         .header {
-            background: #4A7AAB;
+            background: #66BB6A;
             color: white;
             padding: 40px;
             text-align: center;
@@ -75,6 +75,10 @@
             justify-content: center;
             transition: all 0.2s;
         }
+
+        .settings-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
         
         .events-btn {
             position: absolute;
@@ -96,10 +100,6 @@
         }
         
         .events-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        .settings-btn:hover {
             background: rgba(255, 255, 255, 0.2);
         }
         
@@ -225,13 +225,13 @@
         }
         
         .upload-section {
-            border: 2px dashed #4A7AAB;
+            border: 2px dashed #66BB6A;
             border-radius: 10px;
             padding: 30px;
             text-align: center;
             margin-bottom: 20px;
             transition: all 0.2s;
-            background: rgba(74, 122, 171, 0.03);
+            background: rgba(102, 187, 106, 0.03);
         }
         
         .upload-section h2 {
@@ -242,13 +242,13 @@
         }
         
         .upload-section:hover {
-            border-color: #3d6a96;
-            background: rgba(74, 122, 171, 0.06);
+            border-color: #43A047;
+            background: rgba(102, 187, 106, 0.06);
         }
         
         .upload-section.dragover {
-            border-color: #3d6a96;
-            background: rgba(74, 122, 171, 0.08);
+            border-color: #43A047;
+            background: rgba(102, 187, 106, 0.08);
         }
         
         input[type="file"] {
@@ -258,7 +258,7 @@
         .file-label {
             display: inline-block;
             padding: 12px 28px;
-            background: #1A91F0;
+            background: #66BB6A;
             color: white;
             border-radius: 6px;
             cursor: pointer;
@@ -270,9 +270,9 @@
         }
         
         .file-label:hover {
-            background: #0d84e3;
+            background: #43A047;
             transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(26, 145, 240, 0.2);
+            box-shadow: 0 4px 12px rgba(102, 187, 106, 0.2);
         }
         
         .file-name {
@@ -295,14 +295,14 @@
         }
         
         .btn-primary {
-            background: #1A91F0;
+            background: #66BB6A;
             color: white;
         }
         
         .btn-primary:hover {
-            background: #0d84e3;
+            background: #43A047;
             transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(26, 145, 240, 0.2);
+            box-shadow: 0 4px 12px rgba(102, 187, 106, 0.2);
         }
         
         .btn-success {
@@ -436,8 +436,8 @@
         
         .google-btn {
             background: white;
-            border: 2px solid #1A91F0;
-            color: #1A91F0;
+            border: 2px solid #66BB6A;
+            color: #66BB6A;
             padding: 12px 28px;
             border-radius: 6px;
             cursor: pointer;
@@ -451,10 +451,10 @@
         }
         
         .google-btn:hover {
-            background: #1A91F0;
+            background: #66BB6A;
             color: white;
             transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(26, 145, 240, 0.2);
+            box-shadow: 0 4px 12px rgba(102, 187, 106, 0.2);
         }
         
         /* Checkbox styling */
@@ -628,9 +628,9 @@
     <div class="container">
         <div class="header">
             <button class="settings-btn" onclick="showSettings()" title="Settings">⚙️</button>
-            <a href="/events" class="events-btn" title="General Events">📄 General Events</a>
-            <h1>📅 Syllabus to Calendar</h1>
-            <p>Upload your syllabus and automatically create calendar events</p>
+            <a href="/" class="events-btn" title="Syllabus Parser">📑 Syllabus</a>
+            <h1>📅 General Event Parser</h1>
+            <p>Parse general documents for events and add them to your calendar</p>
             <div id="authStatus" style="margin-top: 20px; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 20px; display: none;">
                 <div id="authContent" style="display: flex; align-items: center; gap: 10px;">
                     <img id="userPicture" src="" style="width: 32px; height: 32px; border-radius: 50%; display: none;">
@@ -645,7 +645,7 @@
         
         <div class="content">
             <div class="upload-section" id="uploadSection">
-                <h2>📤 Upload Your Syllabus</h2>
+                <h2>📤 Upload Your Document</h2>
                 <p style="margin: 10px 0; color: #666; font-size: 0.9em;">Supported formats: .txt, .pdf, and image files (.png, .jpg, .jpeg, .gif, .bmp, .webp)</p>
                 <label for="fileInput" class="file-label">
                     Choose File
@@ -929,7 +929,7 @@
                     updateProgress(progress);
                 }, 500);
 
-                const response = await fetch('/upload', {
+                const response = await fetch('/upload-events', {
                     method: 'POST',
                     body: formData
                 });
@@ -989,7 +989,8 @@
                     },
                     body: JSON.stringify({
                         timezone: userTimezone,
-                        event_indices: checkedIndices
+                        event_indices: checkedIndices,
+                        is_general_events: true
                     })
                 });
                 
@@ -997,10 +998,19 @@
                 
                 if (data.success) {
                     showStatus(`✅ ${data.message}`, 'success');
-                    let links = '<br>Created events:<br>';
-                    data.events.forEach(e => {
-                        links += `<a href="${e.link}" target="_blank">${e.title}</a><br>`;
-                    });
+                    let links = '';
+                    
+                    // For general events, show only calendar link
+                    if (data.is_general_events && data.calendar_link) {
+                        links = `<br><a href="${data.calendar_link}" target="_blank" style="color: #66BB6A; font-weight: bold;">📅 ${data.calendar_name}</a>`;
+                    } else {
+                        // For syllabus events, show individual event links
+                        links = '<br>Created events:<br>';
+                        data.events.forEach(e => {
+                            links += `<a href="${e.link}" target="_blank">${e.title}</a><br>`;
+                        });
+                    }
+                    
                     status.innerHTML = `✅ ${data.message}${links}`;
                 } else {
                     showStatus(`Error: ${data.error}`, 'error');

@@ -61,16 +61,18 @@ def create_google_service(credentials_path: str = "credentials.json", token_path
     return service
 
 
-def create_or_get_syllabus_calendar(service, events_data=None) -> tuple:
+def create_or_get_syllabus_calendar(service, events_data=None, is_general_events=False) -> tuple:
     """Create a new calendar for syllabus events or return existing one.
     
+    service: Google Calendar API service object
     events_data: list of events to generate calendar name from (optional)
+    is_general_events: if True, use "General Events" as default name instead of "Syllabus Events"
     Returns a tuple of (calendar_id, calendar_name).
     """
-    calendar_name = "Syllabus Events"
+    calendar_name = "General Events" if is_general_events else "Syllabus Events"
     
-    # Generate dynamic calendar name if events data is provided
-    if events_data and len(events_data) > 0:
+    # Generate dynamic calendar name if events data is provided (only for syllabi)
+    if events_data and len(events_data) > 0 and not is_general_events:
         try:
             import google.generativeai as genai
             import os
@@ -121,9 +123,10 @@ Return only the calendar name, nothing else:"""
                 return calendar['id'], calendar_name
         
         # Create new calendar if it doesn't exist
+        description = 'Events extracted from general documents' if is_general_events else 'Events extracted from academic syllabi'
         calendar_body = {
             'summary': calendar_name,
-            'description': 'Events extracted from academic syllabi',
+            'description': description,
             'timeZone': 'America/Los_Angeles'
         }
         
