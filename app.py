@@ -425,7 +425,7 @@ def create_events():
         # Create a new calendar (always creates a new one)
         syllabus_calendar_id, calendar_name = create_calendar(service, file_content, filename)
         
-        # Get calendar link (always generate for both syllabus and general events)
+        # Get calendar link
         calendar_link = f"https://calendar.google.com/calendar/render?cid={syllabus_calendar_id}"
         
         # Filter events based on user selection
