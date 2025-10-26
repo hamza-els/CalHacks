@@ -35,7 +35,16 @@ def timeout_handler(func, timeout_seconds=60):
     thread = threading.Thread(target=target)
     thread.daemon = True
     thread.start()
-    thread.join(timeout_seconds)
+    
+    # Add progress logging
+    import time
+    check_interval = 30  # Check every 30 seconds
+    elapsed = 0
+    while thread.is_alive() and elapsed < timeout_seconds:
+        thread.join(check_interval)
+        elapsed += check_interval
+        if thread.is_alive():
+            print(f"[Progress] API call still running... ({elapsed}s / {timeout_seconds}s)")
     
     if thread.is_alive():
         raise TimeoutError(f"Function timed out after {timeout_seconds} seconds")
@@ -145,7 +154,13 @@ def extract_events_from_image_gemini(image_data: bytes, mime_type: str = 'image/
     Returns:
         List of extracted events
     """
+    import time
+    from datetime import datetime, timedelta
+    start_time = time.time()
+    print("=" * 60)
     print("Starting image processing with Gemini Vision...")
+    print(f"Start time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print("=" * 60)
     
     if not check_gemini_available():
         raise RuntimeError(
@@ -157,7 +172,6 @@ def extract_events_from_image_gemini(image_data: bytes, mime_type: str = 'image/
         import google.generativeai as genai
         import json
         import dateparser
-        from datetime import datetime, timedelta
         
         print("Gemini API key found, configuring API...")
         
@@ -242,15 +256,19 @@ Return JSON array:"""
                 
                 # Generate content with image (with timeout handling)
                 try:
-                    # Wrap in a timeout function (60 seconds)
+                    # Wrap in a timeout function (5 minutes = 300 seconds)
                     def call_api():
+                        print(f"API call started at {datetime.now().strftime('%H:%M:%S')}")
                         return model.generate_content(
                             [prompt, image_pil],
                             generation_config=generation_config
                         )
                     
-                    response = timeout_handler(call_api, timeout_seconds=120)
-                    print(f"Successfully got response from {model_name}")
+                    print(f"Starting API call with timeout of 300 seconds (5 minutes)...")
+                    api_start_time = datetime.now()
+                    response = timeout_handler(call_api, timeout_seconds=300)
+                    elapsed = (datetime.now() - api_start_time).total_seconds()
+                    print(f"Successfully got response from {model_name} after {elapsed:.1f} seconds")
                     break
                 except TimeoutError as timeout_err:
                     print(f"Timeout with {model_name}: {timeout_err}")
@@ -342,10 +360,20 @@ Return JSON array:"""
                 print(f"Error parsing event {idx + 1}: {e}")
                 continue
         
+        total_time = time.time() - start_time
+        print("=" * 60)
         print(f"Successfully processed {len(events)} events from image")
+        print(f"Total processing time: {total_time:.1f} seconds ({total_time/60:.1f} minutes)")
+        print(f"End time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        print("=" * 60)
         return events
         
     except Exception as e:
+        total_time = time.time() - start_time
+        print("=" * 60)
+        print(f"ERROR: Failed after {total_time:.1f} seconds ({total_time/60:.1f} minutes)")
+        print(f"Error: {str(e)}")
+        print("=" * 60)
         raise RuntimeError(f"Failed to extract events from image using Gemini: {str(e)}")
 
 
