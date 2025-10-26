@@ -653,6 +653,10 @@
         const eventsHeader = document.getElementById('eventsHeader');
         const eventsContent = document.getElementById('eventsContent');
         
+        // Load plane image for advertisements
+        const planeImage = new Image();
+        planeImage.src = '/assets/content.png';
+        
         let selectedFile = null;
         let isAuthenticated = false;
         let allEvents = []; // Store all parsed events
@@ -913,11 +917,70 @@
         }
         
         // Flappy Bird Game
+        class Advertisement {
+            constructor(text, x, y, speed) {
+                this.text = text;
+                this.x = x;
+                this.y = y;
+                this.speed = speed;
+                this.width = 150;  // Plane width
+                this.height = 40;  // Plane height
+                this.bannerWidth = 150;
+                this.bannerHeight = 30;
+            }
+
+            update() {
+                this.x -= this.speed;
+                if (this.x + this.bannerWidth < 0) {
+                    // Reset position with extra spacing
+                    this.x = gameState.canvas.width + 200;
+                    this.y = Math.random() * (gameState.canvas.height - 200) + 50;
+                    // Randomize new advertisement text
+                    this.text = adContent[Math.floor(Math.random() * adContent.length)];
+                    // Slightly randomize speed for variety
+                    this.speed = 1 + Math.random();
+                }
+            }
+
+            draw(ctx) {
+                // Draw plane
+                if (planeImage.complete) {
+                    // Draw the image with slight transparency
+                    ctx.globalAlpha = 0.6;
+                    ctx.drawImage(planeImage, this.x, this.y, 40, 40);
+                    ctx.globalAlpha = 1.0;
+
+                    // Draw connecting lines
+                    ctx.strokeStyle = 'rgba(200, 200, 200, 0.4)';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    // First line from plane to banner
+                    ctx.moveTo(this.x + 35, this.y + 20);
+                    ctx.lineTo(this.x + this.width, this.y + 10);
+                    // Second line from plane to banner (slight offset for visual effect)
+                    ctx.moveTo(this.x + 35, this.y + 22);
+                    ctx.lineTo(this.x + this.width, this.y + 12);
+                    ctx.stroke();
+
+                    // Draw banner (semi-transparent white background)
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+                    ctx.fillRect(this.x + this.width, this.y, this.bannerWidth, this.bannerHeight);
+
+                    // Draw banner text
+                    ctx.fillStyle = 'rgba(26, 145, 240, 0.8)';  // Match the modern blue theme
+                    ctx.font = '16px Graphik, Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(this.text, this.x + this.width + (this.bannerWidth / 2), this.y + 20);
+                }
+            }
+        }
+
         let gameState = {
             canvas: null,
             ctx: null,
             bird: { x: 100, y: 250, width: 37, height: 33, velocity: 0, jump: -8 },
             pipes: [],
+            ads: [],
             score: 0,
             timeScore: 0,
             startTime: null,
@@ -928,7 +991,23 @@
             timeInterval: null,
             pipeSpeed: 5
         };
-        
+
+        // Advertisement content
+        const adContent = [
+            "ANTHROPIC",
+            "CALHACKS",
+            "FETCH.AI",
+            "APPLOVIN"
+        ];
+
+        function createRandomAd() {
+            const text = adContent[Math.floor(Math.random() * adContent.length)];
+            const x = gameState.canvas.width + Math.random() * 300;  // Stagger initial positions
+            const y = Math.random() * (gameState.canvas.height - 200) + 50;  // Random height but not too close to top/bottom
+            const speed = 1 + Math.random();  // Random speed between 1-2
+            return new Advertisement(text, x, y, speed);
+        }
+
         function initGame() {
             const canvas = document.getElementById('gameCanvas');
             gameState.canvas = canvas;
@@ -945,12 +1024,20 @@
             };
             
             gameState.pipes = [];
+            gameState.ads = [];
             gameState.score = 0;
             gameState.timeScore = 0;
             gameState.startTime = null;
             gameState.gameOver = false;
             gameState.gameStarted = false;
             gameState.pipeSpeed = 5;
+            
+            // Create initial advertisements with more spacing
+            for (let i = 0; i < 3; i++) {
+                const ad = createRandomAd();
+                ad.x = gameState.canvas.width + (i * 400); // Space them 400px apart
+                gameState.ads.push(ad);
+            }
             
             document.getElementById('gameScore').textContent = 'Time: 0 | Pipes: 0';
             
@@ -1016,6 +1103,12 @@
             if (!gameState.gameStarted) {
                 showStartScreen();
                 return;
+            }
+            
+            // Update and draw advertisements (before pipes so they appear in background)
+            for (const ad of gameState.ads) {
+                ad.update();
+                ad.draw(ctx);
             }
             
             // Apply gravity
