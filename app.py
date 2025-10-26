@@ -8,7 +8,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 
 from parsers import extract_events_from_text, extract_events_with_gemini
-from calendar_utils import create_google_service, create_google_event
+from calendar_utils import create_google_service, create_google_event, create_or_get_syllabus_calendar
 from image_processor import extract_events_from_image, get_supported_image_formats
 
 # Load environment variables from .env file
@@ -224,6 +224,7 @@ def oauth():
     SCOPES = [
         "openid",
         "https://www.googleapis.com/auth/calendar.events",
+        "https://www.googleapis.com/auth/calendar",
         "https://www.googleapis.com/auth/userinfo.email",
         "https://www.googleapis.com/auth/userinfo.profile"
     ]
@@ -257,6 +258,7 @@ def oauth_callback():
     SCOPES = [
         "openid",
         "https://www.googleapis.com/auth/calendar.events",
+        "https://www.googleapis.com/auth/calendar",
         "https://www.googleapis.com/auth/userinfo.email",
         "https://www.googleapis.com/auth/userinfo.profile"
     ]
@@ -356,6 +358,9 @@ def create_events():
         service = create_google_service()
         events = session['events']
         
+        # Create or get the syllabus calendar
+        syllabus_calendar_id, calendar_name = create_or_get_syllabus_calendar(service, events)
+        
         # Filter events based on user selection
         if event_indices:
             events_to_create = [events[i] for i in event_indices if 0 <= i < len(events)]
@@ -402,7 +407,7 @@ def create_events():
 
                 event['recurring'] = event_data.get('recurring', False)
                 
-                result = create_google_event(service, event, timezone=user_timezone)
+                result = create_google_event(service, event, calendar_id=syllabus_calendar_id, timezone=user_timezone)
                 created_events.append({
                     'title': event['title'],
                     'link': result.get('htmlLink')
@@ -413,8 +418,9 @@ def create_events():
         
         return jsonify({
             'success': True,
-            'message': f'Successfully created {len(created_events)} events',
-            'events': created_events
+            'message': f'Successfully created {len(created_events)} events in "{calendar_name}" calendar. You can toggle this calendar on/off or delete it entirely in Google Calendar.',
+            'events': created_events,
+            'calendar_name': calendar_name
         })
     except Exception as e:
         import traceback

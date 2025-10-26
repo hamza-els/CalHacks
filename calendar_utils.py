@@ -24,6 +24,7 @@ from icalendar import Calendar, Event
 SCOPES = [
     "openid",
     "https://www.googleapis.com/auth/calendar.events",
+    "https://www.googleapis.com/auth/calendar",
     "https://www.googleapis.com/auth/userinfo.email",
     "https://www.googleapis.com/auth/userinfo.profile"
 ]
@@ -58,6 +59,84 @@ def create_google_service(credentials_path: str = "credentials.json", token_path
 
     service = build("calendar", "v3", credentials=creds)
     return service
+
+
+def create_or_get_syllabus_calendar(service, events_data=None) -> tuple:
+    """Create a new calendar for syllabus events or return existing one.
+    
+    events_data: list of events to generate calendar name from (optional)
+    Returns a tuple of (calendar_id, calendar_name).
+    """
+    calendar_name = "Syllabus Events"
+    
+    # Generate dynamic calendar name if events data is provided
+    if events_data and len(events_data) > 0:
+        try:
+            import google.generativeai as genai
+            import os
+            
+            api_key = os.environ.get('GEMINI_API_KEY')
+            if api_key:
+                genai.configure(api_key=api_key)
+                
+                # Create a summary of events for naming
+                events_summary = []
+                for event in events_data[:5]:  # Use first 5 events for context
+                    events_summary.append(f"- {event.get('title', 'Event')}: {event.get('description', '')}")
+                
+                prompt = f"""Based on these calendar events, generate a concise, descriptive calendar name (max 30 characters) that captures the main topic/subject:
+
+{chr(10).join(events_summary)}
+
+Examples of good names:
+- "CS 101 Fall 2024"
+- "Math 1B Calculus"
+- "ENG 125 Ethics"
+- "Physics Lab Schedule"
+
+Return only the calendar name, nothing else:"""
+
+                try:
+                    model = genai.GenerativeModel('gemini-pro')
+                    response = model.generate_content(prompt)
+                    suggested_name = response.text.strip().replace('"', '').replace("'", "")
+                    
+                    # Validate the name (remove any extra text, limit length)
+                    if suggested_name and len(suggested_name) <= 30:
+                        calendar_name = suggested_name
+                        print(f"Generated calendar name: {calendar_name}")
+                    else:
+                        print(f"Generated name too long or invalid: {suggested_name}, using default")
+                except Exception as e:
+                    print(f"Error generating calendar name: {e}, using default")
+        except Exception as e:
+            print(f"Gemini API not available for naming: {e}, using default")
+    
+    try:
+        # Check if syllabus calendar already exists
+        calendar_list = service.calendarList().list().execute()
+        for calendar in calendar_list.get('items', []):
+            if calendar.get('summary') == calendar_name:
+                print(f"Found existing syllabus calendar: {calendar['id']}")
+                return calendar['id'], calendar_name
+        
+        # Create new calendar if it doesn't exist
+        calendar_body = {
+            'summary': calendar_name,
+            'description': 'Events extracted from academic syllabi',
+            'timeZone': 'America/Los_Angeles'
+        }
+        
+        created_calendar = service.calendars().insert(body=calendar_body).execute()
+        calendar_id = created_calendar['id']
+        print(f"Created new syllabus calendar: {calendar_id} with name: {calendar_name}")
+        
+        return calendar_id, calendar_name
+        
+    except Exception as e:
+        print(f"Error creating/getting syllabus calendar: {e}")
+        # Fallback to primary calendar if there's an issue
+        return "primary", "Primary Calendar"
 
 
 def create_google_event(service, event: Dict, calendar_id: str = "primary", timezone: str = "America/Los_Angeles") -> Dict:
