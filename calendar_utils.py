@@ -64,6 +64,8 @@ def create_google_service(credentials_path: str = "credentials.json", token_path
 def create_or_get_syllabus_calendar(service, events_data=None, is_general_events=False) -> tuple:
     """Create a new calendar for syllabus events or return existing one.
     
+    file_content: the actual text content of the uploaded file (optional)
+    filename: name of the uploaded file (optional)
     service: Google Calendar API service object
     events_data: list of events to generate calendar name from (optional)
     is_general_events: if True, use "General Events" as default name instead of "Syllabus Events"
@@ -99,7 +101,7 @@ Examples of good names:
 Return only the calendar name, nothing else:"""
 
                 try:
-                    model = genai.GenerativeModel('gemini-pro')
+                    model = genai.GenerativeModel(model_name)
                     response = model.generate_content(prompt)
                     suggested_name = response.text.strip().replace('"', '').replace("'", "")
                     
