@@ -61,20 +61,19 @@ def create_google_service(credentials_path: str = "credentials.json", token_path
     return service
 
 
-def create_or_get_syllabus_calendar(service, events_data=None, is_general_events=False) -> tuple:
+def create_or_get_syllabus_calendar(service, file_content=None, filename=None, is_general_events=False) -> tuple:
     """Create a new calendar for syllabus events or return existing one.
     
+    service: Google Calendar API service object
     file_content: the actual text content of the uploaded file (optional)
     filename: name of the uploaded file (optional)
-    service: Google Calendar API service object
-    events_data: list of events to generate calendar name from (optional)
     is_general_events: if True, use "General Events" as default name instead of "Syllabus Events"
     Returns a tuple of (calendar_id, calendar_name).
     """
     calendar_name = "General Events" if is_general_events else "Syllabus Events"
     
-    # Generate dynamic calendar name if events data is provided (only for syllabi)
-    if events_data and len(events_data) > 0 and not is_general_events:
+    # Generate dynamic calendar name using file content (only for syllabi)
+    if file_content and len(file_content.strip()) > 0 and not is_general_events:
         try:
             import google.generativeai as genai
             import os
@@ -83,46 +82,41 @@ def create_or_get_syllabus_calendar(service, events_data=None, is_general_events
             if api_key:
                 genai.configure(api_key=api_key)
                 
-                # Create a summary of events for naming
-                events_summary = []
-                for event in events_data[:5]:  # Use first 5 events for context
-                    events_summary.append(f"- {event.get('title', 'Event')}: {event.get('description', '')}")
+                # Use first 1300 characters of file content (typically first page)
+                content_snippet = file_content[:1300]
                 
-                prompt = f"""Based on these calendar events, extract the course code or identifier.
+                prompt = f"""Extract the course code and number from this syllabus. This is VERY IMPORTANT.
 
-PRIORITY: Look for course codes like:
-- "CS 61A", "CS 101", "Math 1B", "ENG 125", "EECS 16A"
-- Format: [Department] [Number] (e.g., CS 61A, Math 1B, ENG 125)
+PRIORITY 1 (HIGHEST PRIORITY): Look for course codes with format [Department][Number]
+Examples: "CS 61A", "CS 101", "Math 55", "MATH 1B", "ENG 125", "EECS 16A", "CHEM 1C"
+Format is typically: [2-4 letter department code] [number][optional letter]
 
-If you find a course code, use it as the calendar name.
-If no course code is found, generate a descriptive name based on the subject (max 30 characters).
+PRIORITY 2: If no course code is found, extract the course title/topic
+Examples: "Discrete Mathematics", "Introduction to Algorithms", "Calculus I"
 
-Examples:
-- "CS 61A"
-- "Math 1B"
-- "ENG 125"
-- "Physics Lab"
+DO NOT return generic terms like "Math", "Computer Science", "English", "Physics", etc.
+DO NOT return the word "syllabus", "course", "class", or "schedule".
 
-Events:
-{chr(10).join(events_summary)}
+Return ONLY the course identifier or title (max 30 characters).
 
-Return only the calendar name, nothing else:"""
-            for model_name in ["gemini-2.5-flash", "gemini-2.5-pro"]:
-                try:
-                    model = genai.GenerativeModel(model_name)
-                    response = model.generate_content(prompt)
-                    suggested_name = response.text.strip().replace('"', '').replace("'", "")
-                    
-                    # Validate the name (remove any extra text, limit length)
-                    if suggested_name and len(suggested_name) <= 30:
-                        calendar_name = suggested_name
-                        print(f"Generated calendar name: {calendar_name}")
-                    else:
-                        print(f"Generated name too long or invalid: {suggested_name}, using default")
-                        calendar_name = "Syllabus Events"
-                except Exception as e:
-                    print(f"Error generating calendar name: {e}, using default")
-                    calendar_name = "Syllabus Events"
+Syllabus content:
+{content_snippet}
+
+Return only the course code or title, nothing else:"""
+                for model_name in ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.0-flash"]:
+                    try:
+                        model = genai.GenerativeModel(model_name)
+                        response = model.generate_content(prompt)
+                        suggested_name = response.text.strip().replace('"', '').replace("'", "")
+                        
+                        # Validate the name (remove any extra text, limit length)
+                        if suggested_name and len(suggested_name) <= 30 and suggested_name.lower() not in ["syllabus", "course", "class", "schedule"]:
+                            calendar_name = suggested_name
+                            print(f"Generated calendar name: {calendar_name}")
+                            break
+                    except Exception as e:
+                        print(f"Model {model_name} failed: {e}, trying next model")
+                        continue
         except Exception as e:
             print(f"Gemini API not available for naming: {e}, using default")
     

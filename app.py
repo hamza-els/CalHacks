@@ -479,7 +479,7 @@ def create_events():
         print(f"DEBUG: file_content preview: {file_content[:200] if file_content else 'None'}...")
         
         # Create or get the calendar (syllabus or general events)
-        syllabus_calendar_id, calendar_name = create_or_get_syllabus_calendar(service, events, is_general_events=is_general_events)
+        syllabus_calendar_id, calendar_name = create_or_get_syllabus_calendar(service, file_content, filename, is_general_events=is_general_events)
         
         # Get calendar link if this is general events
         calendar_link = None
