@@ -326,7 +326,7 @@ def upload_events_file():
 
 
 @app.route('/upload-events', methods=['POST'])
-def upload_events_file():
+def upload_general_events_file():
     """Handle file upload and parse events for general documents (not syllabi)."""
     if 'file' not in request.files:
         return jsonify({'error': 'No file provided'}), 400
