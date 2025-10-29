@@ -15,7 +15,9 @@ from image_processor import extract_events_from_image, get_supported_image_forma
 load_dotenv()
 
 # Allow HTTP for localhost OAuth (development only!)
-os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+# In production (Render with HTTPS), this should not be set
+if os.environ.get('FLASK_ENV') == 'development':
+    os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 app = Flask(__name__, static_folder='assets')
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
@@ -498,5 +500,9 @@ def create_events():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    # For local development only
+    # In production, use: gunicorn -w 4 -b 0.0.0.0:$PORT app:app
+    port = int(os.environ.get('PORT', 5000))
+    debug = os.environ.get('FLASK_ENV') == 'development'
+    app.run(debug=debug, host='0.0.0.0', port=port)
 
