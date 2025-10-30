@@ -501,7 +501,7 @@ def create_events():
 
 if __name__ == '__main__':
     # For local development only
-    # In production, use: gunicorn -w 2 --timeout 300 --worker-class sync -b 0.0.0.0:$PORT app:app
+    # In production, use: gunicorn -w 1 --timeout 300 --worker-class sync -b 0.0.0.0:$PORT app:app
     port = int(os.environ.get('PORT', 5000))
     debug = os.environ.get('FLASK_ENV') == 'development'
     app.run(debug=debug, host='0.0.0.0', port=port)
