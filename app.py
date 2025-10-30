@@ -32,6 +32,29 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 
+# Error handlers to ensure JSON responses for API endpoints
+@app.errorhandler(404)
+def not_found(error):
+    """Handle 404 errors with JSON response for API endpoints."""
+    if request.path.startswith('/api') or request.path in ['/upload', '/create-events', '/auth-status', '/oauth', '/signout']:
+        return jsonify({'error': 'Not found'}), 404
+    return error
+
+@app.errorhandler(500)
+def internal_error(error):
+    """Handle 500 errors with JSON response for API endpoints."""
+    if request.path.startswith('/api') or request.path in ['/upload', '/create-events', '/auth-status']:
+        return jsonify({'error': 'Internal server error'}), 500
+    return error
+
+@app.errorhandler(Exception)
+def handle_exception(error):
+    """Handle uncaught exceptions with JSON response for API endpoints."""
+    if request.path.startswith('/api') or request.path in ['/upload', '/create-events', '/auth-status']:
+        return jsonify({'error': str(error)}), 500
+    raise error
+
+
 def allowed_file(filename):
     """Check if file extension is allowed."""
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
