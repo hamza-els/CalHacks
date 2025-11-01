@@ -8,7 +8,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 
 from parsers import extract_events_from_text, extract_events_with_gemini
-from calendar_utils import create_google_service, create_google_event, create_calendar
+from calendar_utils import create_google_service_from_credentials, create_google_event, create_calendar
 from image_processor import extract_events_from_image, get_supported_image_formats
 
 # Load environment variables from .env file
@@ -35,6 +35,75 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
+def get_credentials_from_session():
+    """Get credentials from Flask session. Returns Credentials object or None."""
+    from google.oauth2.credentials import Credentials
+    
+    if 'token_data' not in session:
+        print("DEBUG: No token_data in session")
+        return None
+    
+    try:
+        creds_dict = session['token_data'].copy()  # Make a copy to avoid mutating session
+        SCOPES = [
+            "openid",
+            "https://www.googleapis.com/auth/calendar.events",
+            "https://www.googleapis.com/auth/calendar",
+            "https://www.googleapis.com/auth/userinfo.email",
+            "https://www.googleapis.com/auth/userinfo.profile"
+        ]
+        
+        # Keep expiry as string - Credentials.from_authorized_user_info expects string format
+        # If it's somehow a datetime object, convert it back to ISO string
+        if 'expiry' in creds_dict:
+            if isinstance(creds_dict['expiry'], datetime):
+                creds_dict['expiry'] = creds_dict['expiry'].isoformat()
+            elif not isinstance(creds_dict['expiry'], str):
+                # Remove invalid expiry
+                print(f"Warning: Invalid expiry type: {type(creds_dict['expiry'])}, removing")
+                creds_dict.pop('expiry', None)
+        
+        # Ensure all required fields are present
+        required_fields = ['token', 'token_uri', 'client_id', 'client_secret']
+        for field in required_fields:
+            if field not in creds_dict or not creds_dict[field]:
+                print(f"Warning: Missing required field in session token_data: {field}")
+                return None
+        
+        print(f"DEBUG: Creating credentials from session data with token: {creds_dict.get('token', '')[:20]}...")
+        creds = Credentials.from_authorized_user_info(creds_dict, SCOPES)
+        print(f"DEBUG: Credentials created successfully, valid: {creds.valid}, expired: {creds.expired if hasattr(creds, 'expired') else 'N/A'}")
+        return creds
+    except Exception as e:
+        print(f"Error loading credentials from session: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
+
+
+def save_credentials_to_session(credentials):
+    """Save credentials to Flask session."""
+    creds_dict = {
+        'token': credentials.token,
+        'refresh_token': credentials.refresh_token,
+        'token_uri': credentials.token_uri,
+        'client_id': credentials.client_id,
+        'client_secret': credentials.client_secret,
+        'scopes': list(credentials.scopes) if credentials.scopes else []
+    }
+    
+    # Add expiry if it exists
+    if hasattr(credentials, 'expiry') and credentials.expiry:
+        if hasattr(credentials.expiry, 'isoformat'):
+            creds_dict['expiry'] = credentials.expiry.isoformat()
+        else:
+            creds_dict['expiry'] = str(credentials.expiry)
+    
+    session['token_data'] = creds_dict
+    # Mark session as modified to ensure it's saved
+    session.modified = True
+
+
 @app.route('/')
 def index():
     """Render the main upload page."""
@@ -44,24 +113,23 @@ def index():
 @app.route('/auth-status')
 def auth_status():
     """Check authentication status and return user info."""
-    has_token = os.path.exists('token.json')
-    user_info = None
+    has_token = 'token_data' in session
+    user_info = session.get('user_info', None)
     is_authenticated = False
     
     print(f"Auth status check: has_token={has_token}, session_auth={session.get('authenticated')}")
     
     if has_token:
         try:
-            from google.oauth2.credentials import Credentials
             from googleapiclient.discovery import build
             
-            creds = Credentials.from_authorized_user_file('token.json', 
-                [
-                    "openid",
-                    "https://www.googleapis.com/auth/calendar.events",
-                    "https://www.googleapis.com/auth/userinfo.email",
-                    "https://www.googleapis.com/auth/userinfo.profile"
-                ])
+            creds = get_credentials_from_session()
+            if not creds:
+                return jsonify({
+                    'authenticated': False,
+                    'has_token': False,
+                    'user': None
+                })
             
             # If credentials are valid (has a token), consider authenticated
             # Check if token exists and hasn't expired
@@ -74,6 +142,8 @@ def auth_status():
                     try:
                         from google.auth.transport.requests import Request
                         creds.refresh(Request())
+                        # Save refreshed credentials back to session
+                        save_credentials_to_session(creds)
                         is_authenticated = True
                     except Exception as e:
                         # If refresh fails due to network issues, still consider authenticated
@@ -91,16 +161,22 @@ def auth_status():
             print(f"Auth check: valid={creds.valid}, expired={creds.expired}, has_token={bool(creds.token)}, is_authenticated={is_authenticated}")
             
             if is_authenticated:
-                # Try to get user info from Google API
-                try:
-                    service = build('oauth2', 'v2', credentials=creds)
-                    user_info = service.userinfo().get().execute()
-                except Exception as e:
-                    print(f"Could not fetch user info (will still show as authenticated): {e}")
-                    # Authentication is still valid even if we can't get user info
-                    pass
+                # Try to get user info from Google API (use cached if available)
+                if not user_info:
+                    try:
+                        service = build('oauth2', 'v2', credentials=creds)
+                        user_info = service.userinfo().get().execute()
+                        # Cache user info in session
+                        session['user_info'] = user_info
+                        session.modified = True
+                    except Exception as e:
+                        print(f"Could not fetch user info (will still show as authenticated): {e}")
+                        # Authentication is still valid even if we can't get user info
+                        pass
         except Exception as e:
             print(f"Error loading credentials: {e}")
+            import traceback
+            traceback.print_exc()
     
     return jsonify({
         'authenticated': is_authenticated,
@@ -112,10 +188,10 @@ def auth_status():
 @app.route('/signout')
 def signout():
     """Sign out the user."""
+    # Clear token data from session
+    session.pop('token_data', None)
+    session.pop('user_info', None)
     session['authenticated'] = False
-    # Optionally delete token.json to force re-authentication
-    if os.path.exists('token.json'):
-        os.remove('token.json')
     return redirect(url_for('index'))
 
 
@@ -326,36 +402,28 @@ def oauth_callback():
     
     # Ensure we have a refresh token
     if not credentials.refresh_token:
-        # Try to reload existing token to get refresh token if it exists
-        if os.path.exists('token.json'):
-            try:
-                from google.oauth2.credentials import Credentials
-                existing_creds = Credentials.from_authorized_user_file('token.json', SCOPES)
-                if existing_creds.refresh_token:
-                    credentials.refresh_token = existing_creds.refresh_token
-            except Exception:
-                pass  # Old token format or invalid, continue without refresh token
+        # Try to reload existing token from session to get refresh token if it exists
+        existing_creds = get_credentials_from_session()
+        if existing_creds and existing_creds.refresh_token:
+            credentials.refresh_token = existing_creds.refresh_token
     
-    # Save credentials
-    creds_dict = {
-        'token': credentials.token,
-        'refresh_token': credentials.refresh_token,
-        'token_uri': credentials.token_uri,
-        'client_id': credentials.client_id,
-        'client_secret': credentials.client_secret,
-        'scopes': credentials.scopes
-    }
+    # Get user info from Google API
+    try:
+        service = build('oauth2', 'v2', credentials=credentials)
+        user_info = service.userinfo().get().execute()
+        session['user_info'] = user_info
+        print(f"Retrieved user info: {user_info.get('email', 'Unknown')}")
+    except Exception as e:
+        print(f"Could not fetch user info: {e}")
+        # Continue anyway - authentication is still valid
     
-    # Add expiry if it exists
-    if hasattr(credentials, 'expiry') and credentials.expiry:
-        creds_dict['expiry'] = credentials.expiry.isoformat()
-    
-    with open('token.json', 'w') as token:
-        import json
-        json.dump(creds_dict, token)
+    # Save credentials to session
+    save_credentials_to_session(credentials)
     
     session['authenticated'] = True
+    session.modified = True  # Ensure session is saved
     print(f"OAuth callback completed. Session authenticated: {session.get('authenticated')}")
+    print(f"Session has token_data: {'token_data' in session}")
     return redirect(url_for('index'))
 
 
@@ -365,9 +433,9 @@ def create_events():
     if 'events' not in session:
         return jsonify({'error': 'No events found. Please upload and parse a file first.'}), 400
     
-    # Check if authenticated by checking for token.json (more reliable than session)
-    has_token = os.path.exists('token.json')
-    if not has_token:
+    # Check if authenticated by checking for token in session
+    creds = get_credentials_from_session()
+    if not creds:
         return jsonify({'error': 'Not authenticated. Please sign in with Google first.'}), 401
     
     try:
@@ -383,7 +451,10 @@ def create_events():
         # Get the actual stored filename from session (this is the secure filename saved to disk)
         filename = session.get('filename', '')
         
-        service = create_google_service()
+        # Create service - this may refresh the credentials if expired
+        service = create_google_service_from_credentials(creds)
+        # Save credentials back to session in case they were refreshed
+        save_credentials_to_session(creds)
         events = session['events']
         
         # Debug: Print filenames

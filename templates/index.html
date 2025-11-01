@@ -964,6 +964,7 @@
             try {
                 const response = await fetch('/auth-status');
                 const data = await response.json();
+                console.log('Auth status response:', data);
                 isAuthenticated = data.authenticated;
                 
                 if (isAuthenticated) {
@@ -1010,9 +1011,21 @@
         checkAuthStatus();
         
         // Check if we're returning from OAuth (indicated by URL or session)
-        if (window.location.search.includes('code=') || window.location.hash.includes('code=')) {
-            setTimeout(checkAuthStatus, 1000); // Check again after a delay
-        }
+        // Also check periodically for a few seconds after page load to catch delayed session cookie
+        let checkCount = 0;
+        const maxChecks = 5;
+        const checkInterval = setInterval(() => {
+            checkCount++;
+            checkAuthStatus();
+            if (checkCount >= maxChecks) {
+                clearInterval(checkInterval);
+            }
+        }, 500);
+        
+        // Stop checking after 3 seconds
+        setTimeout(() => {
+            clearInterval(checkInterval);
+        }, 3000);
         
         // File input change
         fileInput.addEventListener('change', (e) => {

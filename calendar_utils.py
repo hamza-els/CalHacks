@@ -30,11 +30,43 @@ SCOPES = [
 ]
 
 
+def create_google_service_from_credentials(credentials):
+    """Create a Google Calendar API service from a credentials object.
+    
+    Args:
+        credentials: google.oauth2.credentials.Credentials object
+    
+    Returns:
+        Google Calendar API service object
+    """
+    if Credentials is None:
+        raise RuntimeError("Google API libraries are not installed. See requirements.txt")
+    
+    if not credentials:
+        raise Exception("Not authenticated. Please sign in with Google first.")
+    
+    # If credentials are expired, try to refresh
+    if credentials.expired and credentials.refresh_token:
+        try:
+            credentials.refresh(Request())
+        except Exception as e:
+            print(f"Could not refresh token: {e}")
+            raise Exception("Authentication expired. Please sign in again.")
+    
+    if not credentials.valid:
+        raise Exception("Not authenticated. Please sign in with Google first.")
+    
+    service = build("calendar", "v3", credentials=credentials)
+    return service
+
+
 def create_google_service(credentials_path: str = "credentials.json", token_path: str = "token.json"):
     """Create a Google Calendar API service. Returns the service object.
 
     Requires `credentials.json` from Google Cloud Console (OAuth Client ID).
     This function will open a browser for the first-time OAuth consent and save `token.json`.
+    
+    DEPRECATED: Use create_google_service_from_credentials() for session-based auth.
     """
     if Credentials is None:
         raise RuntimeError("Google API libraries are not installed. See requirements.txt")
